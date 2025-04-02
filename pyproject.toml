@@ -1,16 +1,10 @@
-[tool.poetry]
+[project]
 name = "latent-calendar"
 version = "1.5.0"
 description = "Analyzing and modeling weekly calendar distributions using latent components"
-authors = ["Will Dean <wd60622@gmail.com>"]
+authors = [{ name = "Will Dean", email = "wd60622@gmail.com" }]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
-homepage = "https://williambdean.github.io/latent-calendar/"
-documentation = "https://williambdean.github.io/latent-calendar/"
-repository = "https://github.com/williambdean/latent-calendar/"
-packages = [
-    {include = "latent_calendar"},
-    {include = "latent_calendar/py.typed"}
-]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -28,30 +22,57 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+dependencies = [
+    "pandas>=1.0.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "conjugate-models>=0.9.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-pandas = ">=1.0.0"
-scikit-learn = ">=1.0.0"
-matplotlib = ">=3.5.0"
-conjugate-models = ">=0.9.0"
-pymc = { version = ">=5.0.0", optional = true }
+[project.optional-dependencies]
+pymc = ["pymc>=5.0.0"]
 
-[tool.poetry.extras]
-pymc = ["pymc"]
+[project.urls]
+Homepage = "https://williambdean.github.io/latent-calendar/"
+Repository = "https://github.com/williambdean/latent-calendar/"
+Documentation = "https://williambdean.github.io/latent-calendar/"
 
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.4.3"
-mkdocstrings = {extras = ["python"], version = "^0.22.0"}
-mkdocs-material = "^9.1.18"
+[dependency-groups]
+docs = [
+    "mkdocs>=1.4.3,<2",
+    "mkdocstrings[python]>=0.23.0",
+    "mkdocs-material>=9.1.18,<10",
+]
+dev = [
+    "pytest>=7.4.0,<8",
+    "pytest-cov>=4.1.0,<5",
+    "ipython==8.8.0",
+    "tox>=4.11.4,<5",
+    "pytest-mpl>=0.17.0,<0.18",
+    "jupyter>=1.0.0,<2",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
-ipython = "8.8.0"
-tox = "^4.11.4"
-pytest-mpl = "^0.17.0"
-jupyter = "^1.0.0"
+[tool.uv]
+default-groups = [
+    "docs",
+    "dev",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "latent_calendar",
+    "latent_calendar/py.typed",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "latent_calendar",
+    "latent_calendar/py.typed",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.tox]
 legacy_tox_ini = """
@@ -78,10 +99,6 @@ legacy_tox_ini = """
 minversion = 6.0
 addopts = "--mpl --mpl-baseline-path=tests/baseline --cov=latent_calendar --cov-report=xml --cov-report=term-missing"
 testpaths = ["tests"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 88
