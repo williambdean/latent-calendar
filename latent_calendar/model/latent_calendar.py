@@ -53,7 +53,7 @@ class LatentCalendar(BaseLDA):
         )
 
     def predict(self, X: np.ndarray, y=None) -> np.ndarray:
-        """Return the marginal probabilities for a given row.
+        r"""Return the marginal probabilities for a given row.
 
         Marginalize out the loads via law of total probability
 

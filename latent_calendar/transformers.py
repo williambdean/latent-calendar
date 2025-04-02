@@ -55,6 +55,11 @@ def prop_into_day(dt: datetime | DatetimeProperties) -> float | pd.Series:
 class CalandarTimestampFeatures(BaseEstimator, TransformerMixin):
     """Day of week and prop into day columns creation."""
 
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.requires_fit = False
+        return tags
+
     def __init__(
         self,
         timestamp_col: str,
@@ -99,6 +104,11 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
 
     """
 
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.requires_fit = False
+        return tags
+
     def __init__(self, col: str = "hour", minutes: int = 60) -> None:
         self.col = col
         self.minutes = minutes
@@ -123,6 +133,11 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
 
 class VocabTransformer(BaseEstimator, TransformerMixin):
     """Create a vocab column from the day of week and hour columns."""
+
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.requires_fit = False
+        return tags
 
     def __init__(
         self, day_of_week_col: str = "day_of_week", hour_col: str = "hour"
