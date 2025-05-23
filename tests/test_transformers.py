@@ -1,5 +1,6 @@
 import pytest
 
+import narwhals as nw
 import pandas as pd
 
 from latent_calendar.transformers import (
@@ -46,7 +47,15 @@ def test_prop_into_day_series(date) -> None:
     times = ["00:00", "01:00", "12:00", "23:59"]
     answers = [0.0, 1 / 24, 0.5, 0.9993]
     dates = pd.Series(pd.to_datetime([f"{date} {time}" for time in times]))
-    results = prop_into_day(dates.dt)
+
+    @nw.narwhalify
+    def df_prop_into_day(df):
+        col = nw.col("datetime")
+        return df.with_columns(new_col=prop_into_day(col.dt))
+
+    results = (
+        pd.DataFrame({"datetime": dates}).pipe(df_prop_into_day)["new_col"].rename(None)
+    )
     answer = pd.Series(answers)
 
     pd.testing.assert_series_equal(results, answer, atol=0.001)
