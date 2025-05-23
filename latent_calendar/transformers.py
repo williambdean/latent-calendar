@@ -66,7 +66,7 @@ def create_timestamp_features(df: FrameT, timestamp_col: str) -> FrameT:
     )
 
 
-class CalandarTimestampFeatures(BaseEstimator, TransformerMixin):
+class CalendarTimestampFeatures(BaseEstimator, TransformerMixin):
     """Day of week and prop into day columns creation."""
 
     def __sklearn_tags__(self):
@@ -94,6 +94,20 @@ class CalandarTimestampFeatures(BaseEstimator, TransformerMixin):
 
     def get_feature_names_out(self, input_features=None):
         return self.columns
+
+
+def CalandarTimestampFeatures(*arg, **kwargs) -> CalendarTimestampFeatures:
+    """Alias for CalendarTimestampFeatures.
+
+    This is to avoid breaking changes in the API.
+
+    """
+    warnings.warn(
+        "CalandarTimestampFeatures is deprecated. Use CalendarTimestampFeatures instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return CalendarTimestampFeatures(*arg, **kwargs)
 
 
 class HourDiscretizer(BaseEstimator, TransformerMixin):
@@ -203,7 +217,7 @@ def create_timestamp_feature_pipeline(
     transformers = [
         (
             "timestamp_features",
-            CalandarTimestampFeatures(timestamp_col=timestamp_col),
+            CalendarTimestampFeatures(timestamp_col=timestamp_col),
         ),
     ]
 
