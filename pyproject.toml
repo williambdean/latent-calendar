@@ -27,6 +27,7 @@ dependencies = [
     "scikit-learn>=1.0.0",
     "matplotlib>=3.5.0",
     "conjugate-models>=0.9.0",
+    "narwhals>=1.40.0",
 ]
 
 [project.optional-dependencies]
