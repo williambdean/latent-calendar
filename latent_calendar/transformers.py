@@ -45,10 +45,21 @@ def prop_into_day(dt: nw.expr_dt.ExprDateTimeNamespace) -> nw.Expr:
         numeric value(s) between 0.0 and 1.0
 
     """
-    prop_hour = dt.hour() / HOURS_IN_DAY
-    prop_minute = dt.minute() / MINUTES_IN_DAY
-    prop_second = dt.second() / SECONDS_IN_DAY
-    prop_microsecond = dt.microsecond() / MICROSECONDS_IN_DAY
+    if not isinstance(dt, nw.expr_dt.ExprDateTimeNamespace):
+        hour = dt.hour
+        minute = dt.minute
+        second = dt.second
+        microsecond = dt.microsecond
+    else:
+        hour = dt.hour()
+        minute = dt.minute()
+        second = dt.second()
+        microsecond = dt.microsecond()
+
+    prop_hour = hour / HOURS_IN_DAY
+    prop_minute = minute / MINUTES_IN_DAY
+    prop_second = second / SECONDS_IN_DAY
+    prop_microsecond = microsecond / MICROSECONDS_IN_DAY
 
     return prop_hour + prop_minute + prop_second + prop_microsecond
 
