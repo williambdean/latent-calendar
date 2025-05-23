@@ -139,15 +139,23 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
         self.col = col
         self.minutes = minutes
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
-        divisor = 1 if self.minutes == 60 else self.minutes / 60
-        X[self.col] = (X[self.col] // divisor) * divisor
+    @property
+    def divisor(self) -> float:
+        return 1 if self.minutes == 60 else self.minutes / 60
+
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None) -> FrameT:
+        col = nw.col(self.col)
+
+        col = (col // self.divisor) * self.divisor
 
         if self.minutes % 60 == 0:
-            X[self.col] = X[self.col].astype(int)
+            col = col.cast(nw.Int64)
+
+        X = X.with_columns(**{self.col: col})
 
         self.columns = list(X.columns)
 
