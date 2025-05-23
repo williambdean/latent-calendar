@@ -13,11 +13,12 @@ df_wide = transformers.fit_transform(df)
 
 """
 
-from datetime import datetime
 import warnings
 
+import narwhals as nw
+from narwhals.typing import FrameT
+
 import pandas as pd
-from pandas.core.indexes.accessors import DatetimeProperties
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
@@ -32,7 +33,7 @@ from latent_calendar.const import (
 )
 
 
-def prop_into_day(dt: datetime | DatetimeProperties) -> float | pd.Series:
+def prop_into_day(dt: nw.expr_dt.ExprDateTimeNamespace) -> nw.Expr:
     """Returns the proportion into the day from datetime like object.
 
     0.0 is midnight and 1.0 is midnight again.
@@ -44,12 +45,25 @@ def prop_into_day(dt: datetime | DatetimeProperties) -> float | pd.Series:
         numeric value(s) between 0.0 and 1.0
 
     """
-    prop_hour = dt.hour / HOURS_IN_DAY
-    prop_minute = dt.minute / MINUTES_IN_DAY
-    prop_second = dt.second / SECONDS_IN_DAY
-    prop_microsecond = dt.microsecond / MICROSECONDS_IN_DAY
+    prop_hour = dt.hour() / HOURS_IN_DAY
+    prop_minute = dt.minute() / MINUTES_IN_DAY
+    prop_second = dt.second() / SECONDS_IN_DAY
+    prop_microsecond = dt.microsecond() / MICROSECONDS_IN_DAY
 
     return prop_hour + prop_minute + prop_second + prop_microsecond
+
+
+@nw.narwhalify
+def create_timestamp_features(df: FrameT, timestamp_col: str) -> FrameT:
+    col = nw.col(timestamp_col)
+
+    prop_into_day_start = prop_into_day(col.dt)
+    day_of_week = col.dt.weekday()
+
+    return df.with_columns(
+        day_of_week=day_of_week,
+        hour=prop_into_day_start * HOURS_IN_DAY,
+    )
 
 
 class CalandarTimestampFeatures(BaseEstimator, TransformerMixin):
@@ -66,33 +80,20 @@ class CalandarTimestampFeatures(BaseEstimator, TransformerMixin):
     ) -> None:
         self.timestamp_col = timestamp_col
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X, y=None):
         """Create 2 new columns."""
-        if not hasattr(X[self.timestamp_col], "dt"):
-            raise RuntimeError(
-                f"Column {self.timestamp_col!r} is not a datetime column. Use df[{self.timestamp_col!r}] = pd.to_datetime(df[{self.timestamp_col!r}]) first."
-            )
 
-        X = X.copy()
-
-        X["prop_into_day_start"] = prop_into_day(X[self.timestamp_col].dt)
-        X["day_of_week"] = X[self.timestamp_col].dt.dayofweek
-
-        X["hour"] = X["prop_into_day_start"] * 24
-
-        tmp_columns = ["prop_into_day_start"]
-        self.created_columns = ["day_of_week", "hour"]
-
-        X = X.drop(columns=tmp_columns)
-        self.columns = list(X.columns)
+        X = create_timestamp_features(X, self.timestamp_col)
+        X.columns = list(X.columns)
 
         return X
 
     def get_feature_names_out(self, input_features=None):
-        return self.columns.extend(self.created_columns)
+        return self.columns
 
 
 class HourDiscretizer(BaseEstimator, TransformerMixin):

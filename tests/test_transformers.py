@@ -47,7 +47,6 @@ def test_prop_into_day_series(date) -> None:
     answers = [0.0, 1 / 24, 0.5, 0.9993]
     dates = pd.Series(pd.to_datetime([f"{date} {time}" for time in times]))
     results = prop_into_day(dates.dt)
-    print(results)
     answer = pd.Series(answers)
 
     pd.testing.assert_series_equal(results, answer, atol=0.001)
