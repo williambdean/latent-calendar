@@ -1269,6 +1269,7 @@ source = { editable = "." }
 dependencies = [
     { name = "conjugate-models" },
     { name = "matplotlib" },
+    { name = "narwhals" },
     { name = "pandas" },
     { name = "scikit-learn" },
 ]
@@ -1297,6 +1298,7 @@ docs = [
 requires-dist = [
     { name = "conjugate-models", specifier = ">=0.9.0" },
     { name = "matplotlib", specifier = ">=3.5.0" },
+    { name = "narwhals", specifier = ">=1.40.0" },
     { name = "pandas", specifier = ">=1.0.0" },
     { name = "pymc", marker = "extra == 'pymc'", specifier = ">=5.0.0" },
     { name = "scikit-learn", specifier = ">=1.0.0" },
@@ -1641,6 +1643,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fe/3e/a62c3b824c7dec33c4a1578bcc842e6c30300051033a4e5975ed86cc2536/multipledispatch-1.0.0.tar.gz", hash = "sha256:5c839915465c68206c3e9c473357908216c28383b425361e5d144594bf85a7e0", size = 12385 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/51/c0/00c9809d8b9346eb238a6bbd5f83e846a4ce4503da94a4c08cb7284c325b/multipledispatch-1.0.0-py3-none-any.whl", hash = "sha256:0c53cd8b077546da4e48869f49b13164bebafd0c2a5afceb6bb6a316e7fb46e4", size = 12818 },
+]
+
+[[package]]
+name = "narwhals"
+version = "1.40.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/57/283881d06788c2fddd05eb7f0d6c82c5116d2827e83b845c796c74417c56/narwhals-1.40.0.tar.gz", hash = "sha256:17064abffd264ea1cfe6aefc8a0080f3a4ffb3659a98bcad5456ca80b88f2a0a", size = 487625 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/e6/4d16dfa26f40230593c216bf695da01682fdbdf6af4e79abef572ab26bce/narwhals-1.40.0-py3-none-any.whl", hash = "sha256:1e6c731811d01c61147c52433b4d4edfb6511aaf2c859aa01c2e8ca6ff4d27e5", size = 357340 },
 ]
 
 [[package]]
