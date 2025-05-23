@@ -4,7 +4,7 @@ import pandas as pd
 
 from latent_calendar.transformers import (
     prop_into_day,
-    CalandarTimestampFeatures,
+    CalendarTimestampFeatures,
     HourDiscretizer,
     create_timestamp_feature_pipeline,
     create_raw_to_vocab_transformer,
@@ -57,7 +57,7 @@ def test_prop_into_day_series(date) -> None:
 def test_calendar_timestamp_features(
     sample_timestamp_df: pd.DataFrame, pandas_output: bool
 ) -> None:
-    timestamp_features = CalandarTimestampFeatures(
+    timestamp_features = CalendarTimestampFeatures(
         timestamp_col="datetime",
     )
     if pandas_output:
