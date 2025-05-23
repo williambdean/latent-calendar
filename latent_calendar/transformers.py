@@ -69,7 +69,7 @@ def create_timestamp_features(df: FrameT, timestamp_col: str) -> FrameT:
     col = nw.col(timestamp_col)
 
     prop_into_day_start = prop_into_day(col.dt)
-    day_of_week = col.dt.weekday()
+    day_of_week = col.dt.weekday() - 1
 
     return df.with_columns(
         day_of_week=day_of_week,
