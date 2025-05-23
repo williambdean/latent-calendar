@@ -179,16 +179,17 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
         self.day_of_week_col = day_of_week_col
         self.hour_col = hour_col
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
-        X["vocab"] = (
-            X[self.day_of_week_col]
-            .astype(str)
-            .str.zfill(2)
-            .str.cat(X[self.hour_col].astype(str).str.zfill(2), sep=" ")
-        )
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None) -> FrameT:
+        day_of_week_part = nw.col(self.day_of_week_col).cast(nw.String).str.zfill(2)
+        hour_part = nw.col(self.hour_col).cast(nw.String).str.zfill(2)
+
+        vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ")
+
+        X = X.with_columns(vocab=vocab)
 
         self.columns = list(X.columns)
 
@@ -203,6 +204,7 @@ def create_timestamp_feature_pipeline(
     discretize: bool = True,
     minutes: int = 60,
     create_vocab: bool = True,
+    output: str = "pandas",
 ) -> Pipeline:
     """Create a pipeline that creates features from the timestamp column.
 
@@ -211,6 +213,7 @@ def create_timestamp_feature_pipeline(
         discretize: Whether to discretize the hour column.
         minutes: The number of minutes to discretize by. Ignored if discretize is False.
         create_vocab: Whether to create the vocab column.
+        output: The output type of the pipeline. Default is "pandas"
 
     Returns:
         A pipeline that creates features from the timestamp column.
@@ -252,7 +255,7 @@ def create_timestamp_feature_pipeline(
 
     return Pipeline(
         transformers,
-    ).set_output(transform="pandas")
+    ).set_output(transform=output)
 
 
 class VocabAggregation(BaseEstimator, TransformerMixin):
