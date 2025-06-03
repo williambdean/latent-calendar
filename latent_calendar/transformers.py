@@ -13,11 +13,12 @@ df_wide = transformers.fit_transform(df)
 
 """
 
-from datetime import datetime
 import warnings
 
+import narwhals as nw
+from narwhals.typing import FrameT
+
 import pandas as pd
-from pandas.core.indexes.accessors import DatetimeProperties
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
@@ -32,7 +33,7 @@ from latent_calendar.const import (
 )
 
 
-def prop_into_day(dt: datetime | DatetimeProperties) -> float | pd.Series:
+def prop_into_day(dt: nw.expr_dt.ExprDateTimeNamespace) -> nw.Expr:
     """Returns the proportion into the day from datetime like object.
 
     0.0 is midnight and 1.0 is midnight again.
@@ -44,12 +45,36 @@ def prop_into_day(dt: datetime | DatetimeProperties) -> float | pd.Series:
         numeric value(s) between 0.0 and 1.0
 
     """
-    prop_hour = dt.hour / HOURS_IN_DAY
-    prop_minute = dt.minute / MINUTES_IN_DAY
-    prop_second = dt.second / SECONDS_IN_DAY
-    prop_microsecond = dt.microsecond / MICROSECONDS_IN_DAY
+    if not isinstance(dt, nw.expr_dt.ExprDateTimeNamespace):
+        hour = dt.hour
+        minute = dt.minute
+        second = dt.second
+        microsecond = dt.microsecond
+    else:
+        hour = dt.hour()
+        minute = dt.minute()
+        second = dt.second()
+        microsecond = dt.microsecond()
+
+    prop_hour = hour / HOURS_IN_DAY
+    prop_minute = minute / MINUTES_IN_DAY
+    prop_second = second / SECONDS_IN_DAY
+    prop_microsecond = microsecond / MICROSECONDS_IN_DAY
 
     return prop_hour + prop_minute + prop_second + prop_microsecond
+
+
+@nw.narwhalify
+def create_timestamp_features(df: FrameT, timestamp_col: str) -> FrameT:
+    col = nw.col(timestamp_col)
+
+    prop_into_day_start = prop_into_day(col.dt)
+    day_of_week = col.dt.weekday() - 1
+
+    return df.with_columns(
+        day_of_week=day_of_week,
+        hour=prop_into_day_start * HOURS_IN_DAY,
+    )
 
 
 class CalendarTimestampFeatures(BaseEstimator, TransformerMixin):
@@ -66,33 +91,20 @@ class CalendarTimestampFeatures(BaseEstimator, TransformerMixin):
     ) -> None:
         self.timestamp_col = timestamp_col
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X, y=None):
         """Create 2 new columns."""
-        if not hasattr(X[self.timestamp_col], "dt"):
-            raise RuntimeError(
-                f"Column {self.timestamp_col!r} is not a datetime column. Use df[{self.timestamp_col!r}] = pd.to_datetime(df[{self.timestamp_col!r}]) first."
-            )
 
-        X = X.copy()
-
-        X["prop_into_day_start"] = prop_into_day(X[self.timestamp_col].dt)
-        X["day_of_week"] = X[self.timestamp_col].dt.dayofweek
-
-        X["hour"] = X["prop_into_day_start"] * 24
-
-        tmp_columns = ["prop_into_day_start"]
-        self.created_columns = ["day_of_week", "hour"]
-
-        X = X.drop(columns=tmp_columns)
-        self.columns = list(X.columns)
+        X = create_timestamp_features(X, self.timestamp_col)
+        X.columns = list(X.columns)
 
         return X
 
     def get_feature_names_out(self, input_features=None):
-        return self.columns.extend(self.created_columns)
+        return self.columns
 
 
 def CalandarTimestampFeatures(*arg, **kwargs) -> CalendarTimestampFeatures:
@@ -127,15 +139,23 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
         self.col = col
         self.minutes = minutes
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
-        divisor = 1 if self.minutes == 60 else self.minutes / 60
-        X[self.col] = (X[self.col] // divisor) * divisor
+    @property
+    def divisor(self) -> float:
+        return 1 if self.minutes == 60 else self.minutes / 60
+
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None) -> FrameT:
+        col = nw.col(self.col)
+
+        col = (col // self.divisor) * self.divisor
 
         if self.minutes % 60 == 0:
-            X[self.col] = X[self.col].astype(int)
+            col = col.cast(nw.Int64)
+
+        X = X.with_columns(**{self.col: col})
 
         self.columns = list(X.columns)
 
@@ -159,16 +179,17 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
         self.day_of_week_col = day_of_week_col
         self.hour_col = hour_col
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
-        X["vocab"] = (
-            X[self.day_of_week_col]
-            .astype(str)
-            .str.zfill(2)
-            .str.cat(X[self.hour_col].astype(str).str.zfill(2), sep=" ")
-        )
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None) -> FrameT:
+        day_of_week_part = nw.col(self.day_of_week_col).cast(nw.String).str.zfill(2)
+        hour_part = nw.col(self.hour_col).cast(nw.String).str.zfill(2)
+
+        vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ")
+
+        X = X.with_columns(vocab=vocab)
 
         self.columns = list(X.columns)
 
@@ -183,6 +204,7 @@ def create_timestamp_feature_pipeline(
     discretize: bool = True,
     minutes: int = 60,
     create_vocab: bool = True,
+    output: str = "pandas",
 ) -> Pipeline:
     """Create a pipeline that creates features from the timestamp column.
 
@@ -191,6 +213,7 @@ def create_timestamp_feature_pipeline(
         discretize: Whether to discretize the hour column.
         minutes: The number of minutes to discretize by. Ignored if discretize is False.
         create_vocab: Whether to create the vocab column.
+        output: The output type of the pipeline. Default is "pandas"
 
     Returns:
         A pipeline that creates features from the timestamp column.
@@ -232,7 +255,7 @@ def create_timestamp_feature_pipeline(
 
     return Pipeline(
         transformers,
-    ).set_output(transform="pandas")
+    ).set_output(transform=output)
 
 
 class VocabAggregation(BaseEstimator, TransformerMixin):
@@ -248,18 +271,25 @@ class VocabAggregation(BaseEstimator, TransformerMixin):
         self.groups = groups
         self.cols = cols
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None):
-        stats = {}
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None):
+        stats = []
         if self.cols is not None:
-            stats.update({col: (col, "sum") for col in self.cols})
+            stats = [nw.col(col).sum() for col in self.cols]
 
         df_agg = (
-            X.assign(num_events=1)
-            .groupby(self.groups)
-            .agg(num_events=("num_events", "sum"), **stats)
+            X.with_columns(num_events=nw.lit(1))
+            .group_by(self.groups)
+            .agg(
+                [
+                    nw.col("num_events").sum(),
+                    *stats,
+                ]
+            )
+            .pipe(nw.maybe_set_index, column_names=self.groups)
         )
         self.columns = list(df_agg.columns)
 
