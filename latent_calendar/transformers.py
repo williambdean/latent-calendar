@@ -271,18 +271,25 @@ class VocabAggregation(BaseEstimator, TransformerMixin):
         self.groups = groups
         self.cols = cols
 
-    def fit(self, X: pd.DataFrame, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None):
-        stats = {}
+    @nw.narwhalify
+    def transform(self, X: FrameT, y=None):
+        stats = []
         if self.cols is not None:
-            stats.update({col: (col, "sum") for col in self.cols})
+            stats = [nw.col(col).sum() for col in self.cols]
 
         df_agg = (
-            X.assign(num_events=1)
-            .groupby(self.groups)
-            .agg(num_events=("num_events", "sum"), **stats)
+            X.with_columns(num_events=nw.lit(1))
+            .group_by(self.groups)
+            .agg(
+                [
+                    nw.col("num_events").sum(),
+                    *stats,
+                ]
+            )
+            .pipe(nw.maybe_set_index, column_names=self.groups)
         )
         self.columns = list(df_agg.columns)
 
