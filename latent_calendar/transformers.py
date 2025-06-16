@@ -9,8 +9,6 @@ transformers = create_raw_to_vocab_transformer(id_col="Customer ID", timestamp_c
 
 df_wide = transformers.fit_transform(df)
 ```
-
-
 """
 
 import warnings
