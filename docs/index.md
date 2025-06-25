@@ -25,7 +25,8 @@ Or install directly from GitHub for the latest functionality.
 
 ## Features
 
-- Integrated automatically into `pandas` with [`cal` attribute on DataFrames and Series](./modules/extensions.md)
+- DataFrame agnostic transformations and aggregation powered by [`narwhals`](https://narwhals-dev.github.io/narwhals/)
+- Integrated automatically into `pandas` and `polars` with [`cal` attribute on DataFrame and Series](./modules/extensions.md)
 - Compatible with [`scikit-learn` pipelines and transformers](./examples/model/sklearn-compat.md)
 - [Transform and visualize data on a weekly calendar](./examples/cal-attribute.md)
 - [Model weekly calendar data with a mixture of calendars](methodology.md)
