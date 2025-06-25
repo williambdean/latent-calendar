@@ -27,6 +27,7 @@ dependencies = [
     "scikit-learn>=1.0.0",
     "matplotlib>=3.5.0",
     "conjugate-models>=0.9.0",
+    "narwhals>=1.44.0",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +51,7 @@ dev = [
     "tox>=4.11.4,<5",
     "pytest-mpl>=0.17.0,<0.18",
     "jupyter>=1.0.0,<2",
+    "polars>=1.30.0",
 ]
 
 [tool.uv]
@@ -92,6 +94,7 @@ legacy_tox_ini = """
         pytest-mpl
         pytest-cov
         pymc
+        polars
     commands = pytest
 """
 

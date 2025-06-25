@@ -1,11 +1,15 @@
 import pytest
 
+import narwhals as nw
 import pandas as pd
+import polars as pl
+import polars.testing
 
 from latent_calendar.transformers import (
     prop_into_day,
     CalendarTimestampFeatures,
     HourDiscretizer,
+    VocabTransformer,
     create_timestamp_feature_pipeline,
     create_raw_to_vocab_transformer,
 )
@@ -46,8 +50,15 @@ def test_prop_into_day_series(date) -> None:
     times = ["00:00", "01:00", "12:00", "23:59"]
     answers = [0.0, 1 / 24, 0.5, 0.9993]
     dates = pd.Series(pd.to_datetime([f"{date} {time}" for time in times]))
-    results = prop_into_day(dates.dt)
-    print(results)
+
+    @nw.narwhalify
+    def df_prop_into_day(df):
+        col = nw.col("datetime")
+        return df.with_columns(new_col=prop_into_day(col.dt))
+
+    results = (
+        pd.DataFrame({"datetime": dates}).pipe(df_prop_into_day)["new_col"].rename(None)
+    )
     answer = pd.Series(answers)
 
     pd.testing.assert_series_equal(results, answer, atol=0.001)
@@ -55,7 +66,8 @@ def test_prop_into_day_series(date) -> None:
 
 @pytest.mark.parametrize("pandas_output", [True, False])
 def test_calendar_timestamp_features(
-    sample_timestamp_df: pd.DataFrame, pandas_output: bool
+    sample_timestamp_df: pd.DataFrame,
+    pandas_output: bool,
 ) -> None:
     timestamp_features = CalendarTimestampFeatures(
         timestamp_col="datetime",
@@ -124,3 +136,78 @@ def test_raw_to_vocab_with_groups(sample_timestamp_df) -> None:
 
     assert isinstance(df_result, pd.DataFrame)
     assert isinstance(df_result.index, pd.MultiIndex)
+
+
+@pytest.fixture
+def polars_sample_timestamp_df(sample_timestamp_df) -> pl.DataFrame:
+    return pl.from_pandas(sample_timestamp_df)
+
+
+@pytest.mark.parametrize("as_multiindex", [True, False])
+def test_polars_run_through(polars_sample_timestamp_df, as_multiindex: bool) -> None:
+    transformer = create_raw_to_vocab_transformer(
+        id_col="id",
+        timestamp_col="datetime",
+        as_multiindex=as_multiindex,
+        widen=False,
+    )
+
+    # Expected output:
+    # ┌─────┬─────────────┬──────┬────────────┐
+    # │ id  ┆ day_of_week ┆ hour ┆ num_events │
+    # │ --- ┆ ---         ┆ ---  ┆ ---        │
+    # │ i64 ┆ i8          ┆ i64  ┆ i32        │
+    # ╞═════╪═════════════╪══════╪════════════╡
+    # │ 1   ┆ 4           ┆ 12   ┆ 1          │
+    # │ 2   ┆ 4           ┆ 14   ┆ 2          │
+    # │ 1   ┆ 4           ┆ 13   ┆ 1          │
+
+    if not as_multiindex:
+        data = {
+            "vocab": ["04 12", "04 14", "04 13"],
+        }
+    else:
+        data = {
+            "day_of_week": [4, 4, 4],
+            "hour": [12, 14, 13],
+        }
+
+    df_result = transformer.fit_transform(polars_sample_timestamp_df)
+    polars.testing.assert_frame_equal(
+        df_result,
+        pl.DataFrame(
+            {
+                "id": [1, 2, 1],
+                **data,
+                "num_events": [1, 2, 1],
+            }
+        ),
+        check_row_order=False,
+        check_dtypes=False,
+    )
+
+
+@pytest.fixture
+def polars_input() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "day_of_week": [1, 2, 3],
+            "hour": [0, 1, 2],
+        }
+    )
+
+
+def test_polars_vocab_transformer(polars_input) -> None:
+    transformer = VocabTransformer()
+    df_result = transformer.fit_transform(polars_input)
+
+    polars.testing.assert_frame_equal(
+        df_result,
+        pl.DataFrame(
+            {
+                "day_of_week": [1, 2, 3],
+                "hour": [0, 1, 2],
+                "vocab": ["01 00", "02 01", "03 02"],
+            }
+        ),
+    )
