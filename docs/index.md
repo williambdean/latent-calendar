@@ -36,13 +36,15 @@ Or install directly from GitHub for the latest functionality.
 ## Quick Start
 
 ```python
+import pandas as pd
+
 from latent_calendar.datasets import load_chicago_bikes
 from latent_calendar import LatentCalendar
 from latent_calendar.plot import plot_model_components
 
 import matplotlib.pyplot as plt
 
-df_trips = load_chicago_bikes()
+df_trips: pd.DataFrame = load_chicago_bikes()
 df_stations = df_trips.cal.aggregate_events("start_station_name", "started_at", minutes=60)
 
 model = LatentCalendar(n_components=10, random_state=42)
