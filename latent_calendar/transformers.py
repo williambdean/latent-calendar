@@ -179,7 +179,9 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
         self.day_of_week_col = day_of_week_col
         self.hour_col = hour_col
 
+    @nw.narwhalify
     def fit(self, X, y=None):
+        self.columns = X.columns + ["vocab"]
         return self
 
     @nw.narwhalify
@@ -190,8 +192,6 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
         vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ")
 
         X = X.with_columns(vocab=vocab)
-
-        self.columns = list(X.columns)
 
         return X
 
@@ -259,7 +259,7 @@ def create_timestamp_feature_pipeline(
 
 
 class VocabAggregation(BaseEstimator, TransformerMixin):
-    """NOTE: The index of the grouping stays.
+    """NOTE: The index of the grouping stays for pandas DataFrames.
 
     Args:
         groups: The columns to group by.
@@ -272,6 +272,11 @@ class VocabAggregation(BaseEstimator, TransformerMixin):
         self.cols = cols
 
     def fit(self, X, y=None):
+        self.columns = [
+            *self.groups,
+            *(self.cols or []),
+            "num_events",
+        ]
         return self
 
     @nw.narwhalify
@@ -291,7 +296,6 @@ class VocabAggregation(BaseEstimator, TransformerMixin):
             )
             .pipe(nw.maybe_set_index, column_names=self.groups)
         )
-        self.columns = list(df_agg.columns)
 
         return df_agg
 
@@ -392,6 +396,7 @@ class RawToVocab(BaseEstimator, TransformerMixin):
             create_vocab=not self.as_multiindex,
             output=str(X.implementation),
         )
+        self.features.fit(X)
 
         groups = [self.id_col]
         if self.additional_groups is not None:
@@ -409,6 +414,7 @@ class RawToVocab(BaseEstimator, TransformerMixin):
 
         # Reaggregation
         self.aggregation = VocabAggregation(groups=groups, cols=self.cols)
+        self.aggregation.fit(X)
         if not self.widen:
             return self
 
@@ -423,7 +429,6 @@ class RawToVocab(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
         X_trans = self.features.transform(X)
-
         X_agg = self.aggregation.transform(X_trans)
 
         if not self.widen:
@@ -466,5 +471,6 @@ def create_raw_to_vocab_transformer(
         timestamp_col=timestamp_col,
         minutes=minutes,
         additional_groups=additional_groups,
+        as_multiindex=as_multiindex,
         widen=widen,
     )
