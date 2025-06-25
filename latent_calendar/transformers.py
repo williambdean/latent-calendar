@@ -359,6 +359,7 @@ class RawToVocab(BaseEstimator, TransformerMixin):
         additional_groups: Additional columns to group by.
         cols: Additional columns to sum.
         as_multiindex: Whether to return columns as a multiindex.
+        widen: Whether to widen the data at the end. Only supported for DataFrames with index.
 
     """
 
@@ -370,6 +371,7 @@ class RawToVocab(BaseEstimator, TransformerMixin):
         additional_groups: list[str] | None = None,
         cols: list[str] | None = None,
         as_multiindex: bool = True,
+        widen: bool = True,
     ) -> None:
         self.id_col = id_col
         self.timestamp_col = timestamp_col
@@ -377,13 +379,16 @@ class RawToVocab(BaseEstimator, TransformerMixin):
         self.additional_groups = additional_groups
         self.cols = cols
         self.as_multiindex = as_multiindex
+        self.widen = widen
 
-    def fit(self, X: pd.DataFrame, y=None):
+    @nw.narwhalify
+    def fit(self, X: FrameT, y=None):
         # New features at same index level
         self.features = create_timestamp_feature_pipeline(
             self.timestamp_col,
             minutes=self.minutes,
             create_vocab=not self.as_multiindex,
+            output=str(X.implementation),
         )
 
         groups = [self.id_col]
@@ -402,8 +407,11 @@ class RawToVocab(BaseEstimator, TransformerMixin):
 
         # Reaggregation
         self.aggregation = VocabAggregation(groups=groups, cols=self.cols)
+        if not self.widen:
+            return self
+
         # Unstacking
-        self.widden = LongToWide(
+        self.widen_transformer = LongToWide(
             col="num_events", minutes=self.minutes, multiindex=self.as_multiindex
         )
         # Since nothing needs to be "fit"
@@ -413,7 +421,11 @@ class RawToVocab(BaseEstimator, TransformerMixin):
         X_trans = self.features.transform(X)
 
         X_agg = self.aggregation.transform(X_trans)
-        return self.widden.transform(X_agg)
+
+        if not self.widen:
+            return X_agg
+
+        return self.widen_transformer.transform(X_agg)
 
 
 def create_raw_to_vocab_transformer(
@@ -422,6 +434,7 @@ def create_raw_to_vocab_transformer(
     minutes: int = 60,
     additional_groups: list[str] | None = None,
     as_multiindex: bool = True,
+    widen: bool = True,
 ) -> RawToVocab:
     """Wrapper to create the transformer from the configuration options.
 
@@ -431,6 +444,7 @@ def create_raw_to_vocab_transformer(
         minutes: The number of minutes to discretize by.
         additional_groups: Additional columns to group by.
         as_multiindex: Whether to return columns as a multiindex.
+        widen: Whether to widen the data at the end. Only supported for DataFrames with index.
 
     Returns:
         A transformer that transforms timestamp level data into id level data with vocab columns.
@@ -448,4 +462,5 @@ def create_raw_to_vocab_transformer(
         timestamp_col=timestamp_col,
         minutes=minutes,
         additional_groups=additional_groups,
+        widen=widen,
     )
