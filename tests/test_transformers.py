@@ -9,6 +9,7 @@ from latent_calendar.transformers import (
     prop_into_day,
     CalendarTimestampFeatures,
     HourDiscretizer,
+    VocabTransformer,
     create_timestamp_feature_pipeline,
     create_raw_to_vocab_transformer,
 )
@@ -142,10 +143,12 @@ def polars_sample_timestamp_df(sample_timestamp_df) -> pl.DataFrame:
     return pl.from_pandas(sample_timestamp_df)
 
 
-def test_polars_run_through(polars_sample_timestamp_df) -> None:
+@pytest.mark.parametrize("as_multiindex", [True, False])
+def test_polars_run_through(polars_sample_timestamp_df, as_multiindex: bool) -> None:
     transformer = create_raw_to_vocab_transformer(
         id_col="id",
         timestamp_col="datetime",
+        as_multiindex=as_multiindex,
         widen=False,
     )
 
@@ -159,17 +162,54 @@ def test_polars_run_through(polars_sample_timestamp_df) -> None:
     # │ 2   ┆ 4           ┆ 14   ┆ 2          │
     # │ 1   ┆ 4           ┆ 13   ┆ 1          │
 
+    if not as_multiindex:
+        data = {
+            "vocab": ["04 12", "04 14", "04 13"],
+        }
+    else:
+        data = {
+            "day_of_week": [4, 4, 4],
+            "hour": [12, 14, 13],
+        }
+
+    print(f"{as_multiindex = }")
     df_result = transformer.fit_transform(polars_sample_timestamp_df)
+    print(df_result)
     polars.testing.assert_frame_equal(
         df_result,
         pl.DataFrame(
             {
                 "id": [1, 2, 1],
-                "day_of_week": [4, 4, 4],
-                "hour": [12, 14, 13],
+                **data,
                 "num_events": [1, 2, 1],
             }
         ),
         check_row_order=False,
         check_dtypes=False,
+    )
+
+
+@pytest.fixture
+def polars_input() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "day_of_week": [1, 2, 3],
+            "hour": [0, 1, 2],
+        }
+    )
+
+
+def test_polars_vocab_transformer(polars_input) -> None:
+    transformer = VocabTransformer()
+    df_result = transformer.fit_transform(polars_input)
+
+    polars.testing.assert_frame_equal(
+        df_result,
+        pl.DataFrame(
+            {
+                "day_of_week": [1, 2, 3],
+                "hour": [0, 1, 2],
+                "vocab": ["01 00", "02 01", "03 02"],
+            }
+        ),
     )
