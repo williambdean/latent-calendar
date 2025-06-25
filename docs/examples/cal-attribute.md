@@ -31,7 +31,7 @@ FDBCEFE7890F7262                NaN              NaN  electric_bike 2023-06-30 1
 
 ## Aggregation
 
-Aggregate event level data into can be down with the [`cal.aggregate_events`](./../modules/extensions.md#latent_calendar.extensions.PolarsDataFrameAccessor.aggregate_events) method.
+Aggregate event level data into can be done with the [`cal.aggregate_events`](./../modules/extensions.md#latent_calendar.extensions.PolarsDataFrameAccessor.aggregate_events) method.
 
 ```python
 df_polars = pl.from_pandas(df)
