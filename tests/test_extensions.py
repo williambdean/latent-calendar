@@ -1,5 +1,7 @@
 import pytest
 
+import polars as pl
+import polars.testing
 import pandas as pd
 import numpy as np
 
@@ -325,20 +327,23 @@ def test_dataframe_conditional_probabilities(
     pd.testing.assert_frame_equal(result, expected)
 
 
-def test_series_aggregate_events() -> None:
+@pytest.fixture(scope="module")
+def timestamps() -> list[str]:
+    return [
+        # 2021-01-01 is a Friday
+        "2021-01-01 00:00:00",
+        "2021-01-01 00:30:00",
+        "2021-01-01 01:00:00",
+        "2021-01-01 01:30:00",
+        "2021-01-01 01:45:00",
+        "2021-01-01 01:50:00",
+    ]
+
+
+def test_series_aggregate_events(timestamps) -> None:
     name = "events"
     ser = pd.Series(
-        pd.to_datetime(
-            [
-                # 2021-01-01 is a Friday
-                "2021-01-01 00:00:00",
-                "2021-01-01 00:30:00",
-                "2021-01-01 01:00:00",
-                "2021-01-01 01:30:00",
-                "2021-01-01 01:45:00",
-                "2021-01-01 01:50:00",
-            ]
-        ),
+        pd.to_datetime(timestamps),
         name=name,
     )
 
@@ -356,3 +361,26 @@ def test_series_aggregate_events() -> None:
     expected.loc[(4, 1.5)] = 3
 
     pd.testing.assert_series_equal(result, expected)
+
+
+@pytest.fixture
+def df_polars(timestamps) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "id": range(len(timestamps)),
+            "datetime": pl.Series(timestamps).str.to_datetime(),
+        }
+    )
+
+
+def test_polars_dataframe_extensions(df_polars) -> None:
+    assert hasattr(df_polars, "cal")
+
+    cal = df_polars.cal
+
+    df_features = cal.timestamp_features("datetime")
+
+    assert df_features.shape == (6, 5)
+
+    df_agg = cal.aggregate_events("id", "datetime")
+    assert df_agg.shape == (6, 4)
