@@ -2,6 +2,8 @@ import pytest
 
 import narwhals as nw
 import pandas as pd
+import polars as pl
+import polars.testing
 
 from latent_calendar.transformers import (
     prop_into_day,
@@ -63,7 +65,8 @@ def test_prop_into_day_series(date) -> None:
 
 @pytest.mark.parametrize("pandas_output", [True, False])
 def test_calendar_timestamp_features(
-    sample_timestamp_df: pd.DataFrame, pandas_output: bool
+    sample_timestamp_df: pd.DataFrame,
+    pandas_output: bool,
 ) -> None:
     timestamp_features = CalendarTimestampFeatures(
         timestamp_col="datetime",
@@ -132,3 +135,41 @@ def test_raw_to_vocab_with_groups(sample_timestamp_df) -> None:
 
     assert isinstance(df_result, pd.DataFrame)
     assert isinstance(df_result.index, pd.MultiIndex)
+
+
+@pytest.fixture
+def polars_sample_timestamp_df(sample_timestamp_df) -> pl.DataFrame:
+    return pl.from_pandas(sample_timestamp_df)
+
+
+def test_polars_run_through(polars_sample_timestamp_df) -> None:
+    transformer = create_raw_to_vocab_transformer(
+        id_col="id",
+        timestamp_col="datetime",
+        widen=False,
+    )
+
+    # Expected output:
+    # ┌─────┬─────────────┬──────┬────────────┐
+    # │ id  ┆ day_of_week ┆ hour ┆ num_events │
+    # │ --- ┆ ---         ┆ ---  ┆ ---        │
+    # │ i64 ┆ i8          ┆ i64  ┆ i32        │
+    # ╞═════╪═════════════╪══════╪════════════╡
+    # │ 1   ┆ 4           ┆ 12   ┆ 1          │
+    # │ 2   ┆ 4           ┆ 14   ┆ 2          │
+    # │ 1   ┆ 4           ┆ 13   ┆ 1          │
+
+    df_result = transformer.fit_transform(polars_sample_timestamp_df)
+    polars.testing.assert_frame_equal(
+        df_result,
+        pl.DataFrame(
+            {
+                "id": [1, 2, 1],
+                "day_of_week": [4, 4, 4],
+                "hour": [12, 14, 13],
+                "num_events": [1, 2, 1],
+            }
+        ),
+        check_row_order=False,
+        check_dtypes=False,
+    )
