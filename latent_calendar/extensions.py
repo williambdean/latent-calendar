@@ -1,4 +1,10 @@
-"""Pandas extensions for `latent-calendar` and primary interface for the package.
+"""DataFrame extensions for `latent-calendar` and primary interface for the package.
+
+!!! tip
+
+    The extensions work for both pandas and polars DataFrames. However, there is currently
+    limited functionality for polars DataFrames. Consider using polars for aggregation then
+    converting to pandas for plotting and model training.
 
 Provides a `cal` accessor to `DataFrame` and `Series` instances for easy transformation and plotting after import of `latent_calendar`.
 
@@ -78,6 +84,13 @@ from typing import Literal
 import pandas as pd
 import numpy as np
 
+try:
+    import polars as pl
+
+    HAS_POLARS = True
+except ImportError:
+    HAS_POLARS = False
+
 import matplotlib.pyplot as plt
 
 from latent_calendar.model.latent_calendar import LatentCalendar
@@ -108,7 +121,7 @@ from latent_calendar.transformers import (
 
 
 @pd.api.extensions.register_series_accessor("cal")
-class SeriesAccessor:
+class PandasSeriesAccessor:
     """Series accessor for latent_calendar accessed through `cal` attribute of Series."""
 
     def __init__(self, pandas_obj: pd.Series):
@@ -167,7 +180,10 @@ class SeriesAccessor:
         )
 
     def timestamp_features(
-        self, discretize: bool = True, minutes: int = 60, create_vocab: bool = True
+        self,
+        discretize: bool = True,
+        minutes: int = 60,
+        create_vocab: bool = True,
     ) -> pd.DataFrame:
         """Create day of week and proportion into day columns.
 
@@ -320,7 +336,7 @@ class SeriesAccessor:
 
 
 @pd.api.extensions.register_dataframe_accessor("cal")
-class DataFrameAccessor:
+class PandasDataFrameAccessor:
     """DataFrame accessor for latent_calendar accessed through `cal` attribute of DataFrames."""
 
     def __init__(self, pandas_obj: pd.DataFrame):
@@ -798,3 +814,119 @@ class DataFrameAccessor:
             day_labeler=day_labeler,
             time_labeler=time_labeler,
         )
+
+
+if HAS_POLARS:
+
+    @pl.api.register_dataframe_namespace("cal")
+    class PolarsDataFrameAccessor:
+        """Polars extension accessor for latent_calendar.
+
+        Examples:
+
+        Register the accessor on a Polars DataFrame and use it to aggregate events.
+
+        ```python
+        import polars as pl
+
+        # Register the accessor
+        import latent_calendar
+
+        url = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet"
+        df = pl.read_parquet(url)
+
+        df_agg = df.cal.aggregate_events(
+            "PULocationID",
+            "tpep_pickup_datetime",
+        )
+        df_agg
+        ```
+
+        ```text
+        shape: (32_051, 4)
+        ┌──────────────┬─────────────┬──────┬────────────┐
+        │ PULocationID ┆ day_of_week ┆ hour ┆ num_events │
+        │ ---          ┆ ---         ┆ ---  ┆ ---        │
+        │ i32          ┆ i8          ┆ i64  ┆ i32        │
+        ╞══════════════╪═════════════╪══════╪════════════╡
+        │ 76           ┆ 2           ┆ 15   ┆ 16         │
+        │ 143          ┆ 0           ┆ 21   ┆ 123        │
+        │ 153          ┆ 4           ┆ 7    ┆ 2          │
+        │ 18           ┆ 3           ┆ 20   ┆ 2          │
+        │ 100          ┆ 4           ┆ 11   ┆ 350        │
+        │ …            ┆ …           ┆ …    ┆ …          │
+        │ 178          ┆ 6           ┆ 1    ┆ 1          │
+        │ 180          ┆ 2           ┆ 14   ┆ 3          │
+        │ 82           ┆ 6           ┆ 2    ┆ 2          │
+        │ 151          ┆ 0           ┆ 5    ┆ 28         │
+        │ 67           ┆ 2           ┆ 13   ┆ 2          │
+        └──────────────┴─────────────┴──────┴────────────┘
+        ```
+
+        """
+
+        def __init__(self, polars_obj):
+            self._obj = polars_obj
+
+        def timestamp_features(
+            self,
+            timestamp_col: str,
+            discretize: bool = True,
+            minutes: int = 60,
+            create_vocab: bool = True,
+        ):
+            """Create day of week and proportion into day columns for event level DataFrame.
+
+            Exposed as a method on Polars DataFrame for convenience. Use `cal.aggregate_events` instead to create the wide format DataFrame.
+
+            Args:
+                timestamp_col: The name of the timestamp column.
+                discretize: Whether to discretize the hour column.
+                minutes: The number of minutes to discretize by. Ingored if `discretize` is False.
+                create_vocab: Whether to create the vocab column.
+
+            Returns:
+                DataFrame with features added
+
+            """
+            transformer = create_timestamp_feature_pipeline(
+                timestamp_col=timestamp_col,
+                discretize=discretize,
+                create_vocab=create_vocab,
+                minutes=minutes,
+                output="polars",
+            )
+
+            return transformer.fit_transform(self._obj)
+
+        def aggregate_events(
+            self,
+            by: str | list[str],
+            timestamp_col: str,
+            minutes: int = 60,
+            as_multiindex: bool = True,
+        ):
+            """Transform event level Polars DataFrame to aggregated.
+
+            !!! note
+
+                Wide format is not supported in Polars yet.
+
+            Args:
+                by: column(s) to use as index
+                timestamp_col: column to use as timestamp
+                minutes: The number of minutes to discretize by.
+                as_multiindex: whether to use MultiIndex columns
+
+            Returns:
+                DataFrame in wide format
+
+            """
+            return create_raw_to_vocab_transformer(
+                id_col=by if isinstance(by, str) else by[0],
+                timestamp_col=timestamp_col,
+                minutes=minutes,
+                additional_groups=None if isinstance(by, str) else by[1:],
+                as_multiindex=as_multiindex,
+                widen=False,
+            ).fit_transform(self._obj)
