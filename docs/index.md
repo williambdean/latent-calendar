@@ -45,7 +45,7 @@ from latent_calendar.plot import plot_model_components
 import matplotlib.pyplot as plt
 
 df_trips: pd.DataFrame = load_chicago_bikes()
-df_stations = df_trips.cal.aggregate_events("start_station_name", "started_at", minutes=60)
+df_stations = df_trips.cal.aggregate_events("start_station_name", "started_at", minutes=60, widen=True)
 
 model = LatentCalendar(n_components=10, random_state=42)
 model.fit(df_stations)
