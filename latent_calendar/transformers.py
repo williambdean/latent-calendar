@@ -459,6 +459,7 @@ def create_raw_to_vocab_transformer(
         A transformer that transforms timestamp level data into id level data with vocab columns.
 
     """
+
     return RawToVocab(
         id_col=id_col,
         timestamp_col=timestamp_col,
