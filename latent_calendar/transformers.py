@@ -459,13 +459,6 @@ def create_raw_to_vocab_transformer(
         A transformer that transforms timestamp level data into id level data with vocab columns.
 
     """
-    if not as_multiindex:
-        msg = (
-            "columns will be returned as a MultiIndex by default and will "
-            "be behavior in future. Use as_multiindex=False for previous behavior"
-        )
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
     return RawToVocab(
         id_col=id_col,
         timestamp_col=timestamp_col,
