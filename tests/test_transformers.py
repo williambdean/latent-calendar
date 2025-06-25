@@ -172,9 +172,7 @@ def test_polars_run_through(polars_sample_timestamp_df, as_multiindex: bool) -> 
             "hour": [12, 14, 13],
         }
 
-    print(f"{as_multiindex = }")
     df_result = transformer.fit_transform(polars_sample_timestamp_df)
-    print(df_result)
     polars.testing.assert_frame_equal(
         df_result,
         pl.DataFrame(
