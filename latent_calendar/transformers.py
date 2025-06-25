@@ -97,7 +97,7 @@ class CalendarTimestampFeatures(BaseEstimator, TransformerMixin):
         """Create 2 new columns."""
 
         X = create_timestamp_features(X, self.timestamp_col)
-        X.columns = list(X.columns)
+        self.columns = list(X.columns)
 
         return X
 
@@ -172,7 +172,9 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
         return tags
 
     def __init__(
-        self, day_of_week_col: str = "day_of_week", hour_col: str = "hour"
+        self,
+        day_of_week_col: str = "day_of_week",
+        hour_col: str = "hour",
     ) -> None:
         self.day_of_week_col = day_of_week_col
         self.hour_col = hour_col
@@ -412,7 +414,9 @@ class RawToVocab(BaseEstimator, TransformerMixin):
 
         # Unstacking
         self.widen_transformer = LongToWide(
-            col="num_events", minutes=self.minutes, multiindex=self.as_multiindex
+            col="num_events",
+            minutes=self.minutes,
+            multiindex=self.as_multiindex,
         )
         # Since nothing needs to be "fit"
         return self
