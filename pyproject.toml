@@ -94,6 +94,7 @@ legacy_tox_ini = """
         pytest-mpl
         pytest-cov
         pymc
+        polars
     commands = pytest
 """
 
