@@ -14,7 +14,7 @@ df_wide = transformers.fit_transform(df)
 import warnings
 
 import narwhals as nw
-from narwhals.typing import FrameT
+from narwhals.typing import FrameT, IntoFrameT
 
 import pandas as pd
 
@@ -62,7 +62,6 @@ def prop_into_day(dt: nw.expr_dt.ExprDateTimeNamespace) -> nw.Expr:
     return prop_hour + prop_minute + prop_second + prop_microsecond
 
 
-@nw.narwhalify
 def create_timestamp_features(df: FrameT, timestamp_col: str) -> FrameT:
     col = nw.col(timestamp_col)
 
@@ -96,7 +95,7 @@ class CalendarTimestampFeatures(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """Create 2 new columns."""
 
-        X = create_timestamp_features(X, self.timestamp_col)
+        X = create_timestamp_features(X, self.timestamp_col).to_native()
         self.columns = list(X.columns)
 
         return X
@@ -117,6 +116,25 @@ def CalandarTimestampFeatures(*arg, **kwargs) -> CalendarTimestampFeatures:
         stacklevel=2,
     )
     return CalendarTimestampFeatures(*arg, **kwargs)
+
+
+def create_discretized_hour(
+    X: FrameT,
+    col: str = "hour",
+    minutes: int = 60,
+) -> FrameT:
+    divisor = 1 if minutes == 60 else minutes / 60
+    name = col
+    col = nw.col(col)
+
+    col = (col // divisor) * divisor
+
+    if minutes % 60 == 0:
+        col = col.cast(nw.Int64)
+
+    col = col.alias(name)
+
+    return X.with_columns(col)
 
 
 class HourDiscretizer(BaseEstimator, TransformerMixin):
@@ -146,14 +164,7 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
 
     @nw.narwhalify
     def transform(self, X: FrameT, y=None) -> FrameT:
-        col = nw.col(self.col)
-
-        col = (col // self.divisor) * self.divisor
-
-        if self.minutes % 60 == 0:
-            col = col.cast(nw.Int64)
-
-        X = X.with_columns(**{self.col: col})
+        X = create_discretized_hour(X, col=self.col, minutes=self.minutes)
 
         self.columns = list(X.columns)
 
@@ -161,6 +172,15 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
 
     def get_feature_names_out(self, input_features=None):
         return self.columns
+
+
+def create_vocab_columns(X: FrameT, hour_col: str, day_of_week_col) -> FrameT:
+    day_of_week_part = nw.col(day_of_week_col).cast(nw.String).str.zfill(2)
+    hour_part = nw.col(hour_col).cast(nw.String).str.zfill(2)
+
+    vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ").alias("vocab")
+
+    return X.with_columns(vocab)
 
 
 class VocabTransformer(BaseEstimator, TransformerMixin):
@@ -186,14 +206,11 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
 
     @nw.narwhalify
     def transform(self, X: FrameT, y=None) -> FrameT:
-        day_of_week_part = nw.col(self.day_of_week_col).cast(nw.String).str.zfill(2)
-        hour_part = nw.col(self.hour_col).cast(nw.String).str.zfill(2)
-
-        vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ")
-
-        X = X.with_columns(vocab=vocab)
-
-        return X
+        return create_vocab_columns(
+            X,
+            hour_col=self.hour_col,
+            day_of_week_col=self.day_of_week_col,
+        )
 
     def get_feature_names_out(self, input_features=None):
         return self.columns
@@ -258,6 +275,28 @@ def create_timestamp_feature_pipeline(
     ).set_output(transform=output)
 
 
+def aggregate_vocab(
+    X: FrameT,
+    groups: list[str],
+    cols: list[str] | None = None,
+) -> FrameT:
+    stats = []
+    if cols is not None:
+        stats = [nw.col(col).sum() for col in cols]
+
+    return (
+        X.with_columns(num_events=nw.lit(1))
+        .group_by(groups)
+        .agg(
+            [
+                nw.col("num_events").sum(),
+                *stats,
+            ]
+        )
+        .pipe(nw.maybe_set_index, column_names=groups)
+    )
+
+
 class VocabAggregation(BaseEstimator, TransformerMixin):
     """NOTE: The index of the grouping stays for pandas DataFrames.
 
@@ -281,23 +320,7 @@ class VocabAggregation(BaseEstimator, TransformerMixin):
 
     @nw.narwhalify
     def transform(self, X: FrameT, y=None):
-        stats = []
-        if self.cols is not None:
-            stats = [nw.col(col).sum() for col in self.cols]
-
-        df_agg = (
-            X.with_columns(num_events=nw.lit(1))
-            .group_by(self.groups)
-            .agg(
-                [
-                    nw.col("num_events").sum(),
-                    *stats,
-                ]
-            )
-            .pipe(nw.maybe_set_index, column_names=self.groups)
-        )
-
-        return df_agg
+        return aggregate_vocab(X, self.groups, cols=self.cols)
 
     def get_feature_names_out(self, input_features=None):
         return self.columns
@@ -353,6 +376,97 @@ class LongToWide(BaseEstimator, TransformerMixin):
 
     def get_feature_names_out(self, input_features=None):
         return self.columns
+
+
+def raw_to_aggregate(
+    df: IntoFrameT,
+    id_col: str,
+    timestamp_col: str,
+    minutes: int = 60,
+    additional_groups: list[str] | None = None,
+    cols: list[str] | None = None,
+) -> IntoFrameT:
+    """Aggregate raw timestamp level data into
+
+    This function uses narwhals and will work on any supported DataFrame implementation.
+
+    Args:
+        df: The input data.
+        id_col: The name of the id column.
+        timestamp_col: The name of the timestamp column.
+        minutes: The number of minutes to discretize by.
+        additional_groups: Additional columns to group by.
+        cols: Additional columns to sum.
+
+    Returns:
+        A DataFrame with aggregated data.
+
+    Example:
+        Aggregate DataFrame in a polars LazyFrame
+
+        ```python
+        import polars as pl
+
+        from latent_calendar.datasets import load_online_transactions
+        from latent_calendar import raw_to_aggregate
+
+        df = load_online_transactions()
+        df_lazy = pl.LazyFrame(df)
+
+        df_agg = raw_to_aggregate(
+            df=df_lazy,
+            id_col="Country",
+            timestamp_col="InvoiceDate",
+        )
+
+        df_agg.collect()
+        ```
+
+        ```
+        shape: (1_088, 4)
+        ┌────────────────┬─────────────┬──────┬────────────┐
+        │ Country        ┆ day_of_week ┆ hour ┆ num_events │
+        │ ---            ┆ ---         ┆ ---  ┆ ---        │
+        │ str            ┆ i8          ┆ i64  ┆ i32        │
+        ╞════════════════╪═════════════╪══════╪════════════╡
+        │ Belgium        ┆ 2           ┆ 15   ┆ 1          │
+        │ Germany        ┆ 0           ┆ 8    ┆ 112        │
+        │ EIRE           ┆ 4           ┆ 16   ┆ 18         │
+        │ Italy          ┆ 0           ┆ 11   ┆ 1          │
+        │ Canada         ┆ 4           ┆ 12   ┆ 1          │
+        │ …              ┆ …           ┆ …    ┆ …          │
+        │ Finland        ┆ 3           ┆ 19   ┆ 17         │
+        │ Australia      ┆ 1           ┆ 14   ┆ 8          │
+        │ Portugal       ┆ 1           ┆ 11   ┆ 23         │
+        │ United Kingdom ┆ 0           ┆ 11   ┆ 17949      │
+        │ Iceland        ┆ 2           ┆ 14   ┆ 29         │
+        └────────────────┴─────────────┴──────┴────────────┘
+        ```
+
+    """
+    return (
+        nw.from_native(df)
+        .pipe(
+            create_timestamp_features,
+            timestamp_col=timestamp_col,
+        )
+        .pipe(
+            create_discretized_hour,
+            col="hour",
+            minutes=minutes,
+        )
+        .pipe(
+            create_vocab_columns,
+            hour_col="hour",
+            day_of_week_col="day_of_week",
+        )
+        .pipe(
+            aggregate_vocab,
+            groups=[id_col, "day_of_week", "hour", *(additional_groups or [])],
+            cols=cols,
+        )
+        .to_native()
+    )
 
 
 class RawToVocab(BaseEstimator, TransformerMixin):
