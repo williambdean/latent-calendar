@@ -12,6 +12,7 @@ from latent_calendar.transformers import (
     VocabTransformer,
     create_timestamp_feature_pipeline,
     create_raw_to_vocab_transformer,
+    raw_to_aggregate,
 )
 
 
@@ -211,3 +212,12 @@ def test_polars_vocab_transformer(polars_input) -> None:
             }
         ),
     )
+
+
+def test_support_for_lazyframe(polars_sample_timestamp_df) -> None:
+    df_lazy = pl.LazyFrame(polars_sample_timestamp_df)
+
+    result = raw_to_aggregate(df_lazy, id_col="id", timestamp_col="datetime")
+
+    assert isinstance(result, pl.LazyFrame)
+    assert result.collect().shape == (3, 4)
