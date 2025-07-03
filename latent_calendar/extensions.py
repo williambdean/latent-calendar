@@ -81,6 +81,8 @@ Examples:
 
 from typing import Literal
 
+import narwhals as nw
+
 import pandas as pd
 import numpy as np
 
@@ -117,6 +119,10 @@ from latent_calendar.transformers import (
     create_raw_to_vocab_transformer,
     create_timestamp_feature_pipeline,
     LongToWide,
+    raw_to_aggregate,
+    create_timestamp_features,
+    create_discretized_hour,
+    create_vocab,
 )
 
 
@@ -930,3 +936,92 @@ if HAS_POLARS:
                 as_multiindex=as_multiindex,
                 widen=False,
             ).fit_transform(self._obj)
+
+    @pl.api.register_lazyframe_namespace("cal")
+    class PolarsLazyFrameAccessor:
+        """LazyFrame extension accessor for latent_calendar.
+
+        Examples:
+
+        ```python
+        import polars as pl
+
+        # Register the accessor
+        import latent_calendar
+
+        url = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet"
+        df = pl.read_parquet(url).lazy()
+
+        df_agg = df.cal.aggregate_events(
+            "PULocationID",
+            "tpep_pickup_datetime",
+        )
+        df_agg.collect()
+        ```
+
+        ```text
+        shape: (32_051, 4)
+        ┌──────────────┬─────────────┬──────┬────────────┐
+        │ PULocationID ┆ day_of_week ┆ hour ┆ num_events │
+        │ ---          ┆ ---         ┆ ---  ┆ ---        │
+        │ i32          ┆ i8          ┆ i64  ┆ i32        │
+        ╞══════════════╪═════════════╪══════╪════════════╡
+        │ 207          ┆ 1           ┆ 8    ┆ 2          │
+        │ 232          ┆ 2           ┆ 10   ┆ 19         │
+        │ 97           ┆ 2           ┆ 9    ┆ 11         │
+        │ 74           ┆ 5           ┆ 10   ┆ 49         │
+        │ 92           ┆ 1           ┆ 6    ┆ 2          │
+        │ …            ┆ …           ┆ …    ┆ …          │
+        │ 1            ┆ 4           ┆ 16   ┆ 12         │
+        │ 34           ┆ 3           ┆ 14   ┆ 1          │
+        │ 74           ┆ 1           ┆ 23   ┆ 24         │
+        │ 102          ┆ 0           ┆ 5    ┆ 1          │
+        │ 212          ┆ 0           ┆ 10   ┆ 3          │
+        └──────────────┴─────────────┴──────┴────────────┘
+        ```
+
+
+        """
+
+        def __init__(self, obj):
+            self._obj = obj
+
+        def timestamp_features(
+            self,
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            """Create day of week and proportion into day columns for event level LazyFrame."""
+            return (
+                nw.from_native(self._obj)
+                .pipe(
+                    create_timestamp_features,
+                    timestamp_col=timestamp_col,
+                )
+                .pipe(
+                    create_discretized_hour,
+                    col="hour",
+                    minutes=minutes,
+                )
+                .pipe(
+                    create_vocab,
+                    hour_col="hour",
+                    day_of_week_col="day_of_week",
+                )
+                .to_native()
+            )
+
+        def aggregate_events(
+            self,
+            by: str | list[str],
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            """Aggregate the event level Polars LazyFrame to aggregated format."""
+            return self._obj.pipe(
+                raw_to_aggregate,
+                id_col=by if isinstance(by, str) else by[0],
+                timestamp_col=timestamp_col,
+                minutes=minutes,
+                additional_groups=None if isinstance(by, str) else by[1:],
+            )
