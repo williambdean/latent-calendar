@@ -122,7 +122,7 @@ from latent_calendar.transformers import (
     raw_to_aggregate,
     create_timestamp_features,
     create_discretized_hour,
-    create_vocab_columns,
+    create_vocab,
 )
 
 
@@ -959,7 +959,7 @@ if HAS_POLARS:
                     minutes=minutes,
                 )
                 .pipe(
-                    create_vocab_columns,
+                    create_vocab,
                     hour_col="hour",
                     day_of_week_col="day_of_week",
                 )

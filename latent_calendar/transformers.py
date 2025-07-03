@@ -174,7 +174,7 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
         return self.columns
 
 
-def create_vocab_columns(X: FrameT, hour_col: str, day_of_week_col) -> FrameT:
+def create_vocab(X: FrameT, hour_col: str, day_of_week_col) -> FrameT:
     day_of_week_part = nw.col(day_of_week_col).cast(nw.String).str.zfill(2)
     hour_part = nw.col(hour_col).cast(nw.String).str.zfill(2)
 
@@ -206,7 +206,7 @@ class VocabTransformer(BaseEstimator, TransformerMixin):
 
     @nw.narwhalify
     def transform(self, X: FrameT, y=None) -> FrameT:
-        return create_vocab_columns(
+        return create_vocab(
             X,
             hour_col=self.hour_col,
             day_of_week_col=self.day_of_week_col,
@@ -456,7 +456,7 @@ def raw_to_aggregate(
             minutes=minutes,
         )
         .pipe(
-            create_vocab_columns,
+            create_vocab,
             hour_col="hour",
             day_of_week_col="day_of_week",
         )
