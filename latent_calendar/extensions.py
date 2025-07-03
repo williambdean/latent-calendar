@@ -81,6 +81,8 @@ Examples:
 
 from typing import Literal
 
+import narwhals as nw
+
 import pandas as pd
 import numpy as np
 
@@ -117,6 +119,10 @@ from latent_calendar.transformers import (
     create_raw_to_vocab_transformer,
     create_timestamp_feature_pipeline,
     LongToWide,
+    raw_to_aggregate,
+    create_timestamp_features,
+    create_discretized_hour,
+    create_vocab_columns,
 )
 
 
@@ -930,3 +936,46 @@ if HAS_POLARS:
                 as_multiindex=as_multiindex,
                 widen=False,
             ).fit_transform(self._obj)
+
+    @pl.api.register_lazyframe_namespace("cal")
+    class PolarsLazyFrameAccessor:
+        def __init__(self, obj):
+            self._obj = obj
+
+        def timestamp_features(
+            self,
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            return (
+                nw.from_native(self._obj)
+                .pipe(
+                    create_timestamp_features,
+                    timestamp_col=timestamp_col,
+                )
+                .pipe(
+                    create_discretized_hour,
+                    col="hour",
+                    minutes=minutes,
+                )
+                .pipe(
+                    create_vocab_columns,
+                    hour_col="hour",
+                    day_of_week_col="day_of_week",
+                )
+                .to_native()
+            )
+
+        def aggregate_events(
+            self,
+            by: str | list[str],
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            return self._obj.pipe(
+                raw_to_aggregate,
+                id_col=by if isinstance(by, str) else by[0],
+                timestamp_col=timestamp_col,
+                minutes=minutes,
+                additional_groups=None if isinstance(by, str) else by[1:],
+            )
