@@ -53,6 +53,8 @@ dev = [
     "jupyter>=1.0.0,<2",
     "polars>=1.30.0",
     "pyarrow>=20.0.0",
+    "mkdocs-marimo>=0.2.1",
+    "marimo>=0.14.10",
 ]
 
 [tool.uv]
