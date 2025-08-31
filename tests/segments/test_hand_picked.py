@@ -58,7 +58,7 @@ def test_create_hour_strat(start, end, answer) -> None:
     ser = create_hourly_segment(start=start, end=end, name="Test Name")
 
     assert isinstance(ser, pd.Series)
-    assert ser.dtype == np.dtype("int")
+    assert np.issubdtype(ser.dtype, np.integer)
     assert ser.sum() == answer
     assert ser.name == "Test Name"
 
