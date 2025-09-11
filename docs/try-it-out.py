@@ -5,19 +5,40 @@ app = marimo.App(width="medium")
 
 
 @app.cell
+def _(mo):
+    mo.md(
+        r"""
+    ## Try out `latent-calendar`
+
+
+    Use
+    ```python
+    import latent_calendar  # noqa: F401
+
+    import polars as pl
+
+
+
+    ```
+    """
+    )
+    return
+
+
+@app.cell
 async def _():
     from io import BytesIO
 
     import marimo as mo
     import micropip
 
-    await micropip.install(["latent-calendar"], reinstall=True)
+    await micropip.install(["latent-calendar"])
 
     import matplotlib.pyplot as plt
 
-    import latent_calendar  # noqa: E402
+    import latent_calendar  # noqa: F401
 
-    return BytesIO, mo, plt, latent_calendar
+    return BytesIO, mo, plt
 
 
 @app.cell
@@ -55,7 +76,11 @@ def _(df, id_col, mo):
 
 
 @app.cell
-def _(mo):
+def _(mo, timestamp_col):
+    if not timestamp_col.value:
+        mo.stop()
+
+    seed = mo.ui.text(label="Random seed", value="42")
     nsamples = mo.ui.number(label=r"\# samples")
     max_cols = mo.ui.number(label=r"max \# rows", value=3)
     fig_height = mo.ui.slider(
@@ -67,27 +92,43 @@ def _(mo):
 
     mo.vstack(
         [
+            mo.md("**Plot configuration:**"),
+            seed,
             nsamples,
             max_cols,
             fig_height,
             fig_width,
         ]
     )
-    return fig_height, fig_width, max_cols, nsamples
+    return fig_height, fig_width, max_cols, nsamples, seed
 
 
 @app.cell
-def _(df, id_col, nsamples, nw, timestamp_col):
-    df_widen = (
-        df.with_columns(
-            nw.col(timestamp_col.value).str.to_datetime(),
+def _(df, id_col, mo, nsamples, nw, seed, timestamp_col):
+    def widen(df):
+        return (
+            df.with_columns(
+                nw.col(timestamp_col.value).str.to_datetime(),
+            )
+            .to_native()
+            .cal.aggregate_events(id_col.value, timestamp_col.value)
+            .cal.normalize("max")
         )
-        .to_native()
-        .cal.aggregate_events(id_col.value, timestamp_col.value)
-        .cal.normalize("max")
-    )
 
-    random_state = 42
+    try:
+        df_widen = widen(df)
+    except Exception as e:
+        mo.output.replace(
+            mo.md(f"""
+            Error processing data:
+
+            ````
+            {e}
+            ````
+            """),
+        )
+
+    random_state = sum(map(ord, seed.value))
 
     if nsamples.value:
         df_widen = df_widen.sample(n=nsamples.value, random_state=random_state)
