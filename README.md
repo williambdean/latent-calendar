@@ -8,7 +8,7 @@
 
 Analyze and model data on a weekly calendar
 
-![Quick Start](./images/quick-start.png)
+![Quick Start](./docs/images/quick-start.png)
 
 ## Installation
 
