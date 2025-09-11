@@ -8,6 +8,8 @@
 
 Analyze and model data on a weekly calendar
 
+![Quick Start](./images/quick-start.png)
+
 ## Installation
 
 Install from PyPI:
