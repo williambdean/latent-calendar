@@ -93,7 +93,7 @@ Custom [color maps](./../modules/plot/colors.md#latent_calendar.plot.colors) can
 ```python
 (
     df_member_casual
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()
