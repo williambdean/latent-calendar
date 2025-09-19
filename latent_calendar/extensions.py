@@ -79,8 +79,6 @@ Examples:
 
 """
 
-from typing import Literal
-
 import narwhals as nw
 
 import pandas as pd
@@ -351,6 +349,8 @@ class PandasDataFrameAccessor:
     def divide_by_max(self) -> pd.DataFrame:
         """Divide each row by the max value.
 
+        Use before plotting to normalize the values to [0, 1].
+
         Returns:
             DataFrame with row-wise operations applied
 
@@ -359,6 +359,8 @@ class PandasDataFrameAccessor:
 
     def divide_by_sum(self) -> pd.DataFrame:
         """Divide each row by the sum of the row.
+
+        Use to create an empirical probability distribution for each row.
 
         Returns:
             DataFrame with row-wise operations applied
@@ -369,48 +371,15 @@ class PandasDataFrameAccessor:
     def divide_by_even_rate(self) -> pd.DataFrame:
         """Divide each row by the number of columns.
 
+        Use to create a relative rate compared to an even distribution. Greater than
+        1 indicates the row has more events than expected under an even distribution.
+
         Returns:
             DataFrame with row-wise operations applied
 
         """
         value = self._obj.shape[1]
         return self._obj.mul(value)
-
-    def normalize(self, kind: Literal["max", "probs", "even_rate"]) -> pd.DataFrame:
-        """Row-wise operations on DataFrame.
-
-        Args:
-            kind: The normalization to apply.
-
-        Returns:
-            DataFrame with row-wise operations applied
-
-        """
-        import warnings
-
-        def warn(message):
-            warnings.warn(message, DeprecationWarning, stacklevel=3)
-
-        warning_message = "This method will be deprecated in future versions"
-
-        funcs = {
-            "max": self.divide_by_max,
-            "probs": self.divide_by_sum,
-            "even_rate": self.divide_by_even_rate,
-        }
-
-        if kind not in funcs:
-            warn(warning_message)
-            raise ValueError(
-                f"kind must be one of ['max', 'probs', 'even_rate'], got {kind}"
-            )
-
-        func = funcs[kind]
-
-        warning_message = f"{warning_message} in favor of df.cal.{func.__name__}()"
-        warn(warning_message)
-
-        return func()
 
     def conditional_probabilities(
         self,
