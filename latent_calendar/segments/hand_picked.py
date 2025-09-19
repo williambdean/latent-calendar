@@ -1,6 +1,5 @@
 """Create hand picked segments on the calendar.
 
-
 Examples:
     Create some segments for a calendar:
 

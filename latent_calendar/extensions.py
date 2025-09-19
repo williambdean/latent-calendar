@@ -79,6 +79,8 @@ Examples:
 
 """
 
+from typing import Literal
+
 import narwhals as nw
 
 import pandas as pd
@@ -503,7 +505,10 @@ class PandasDataFrameAccessor:
         )
         return transformer.fit_transform(self._obj)
 
-    def sum_over_vocab(self, aggregation: str = "dow") -> pd.DataFrame:
+    def sum_over_vocab(
+        self,
+        aggregation: Literal["dow", "hour"] = "dow",
+    ) -> pd.DataFrame:
         """Sum the wide format to day of week or hour of day.
 
         Args:
