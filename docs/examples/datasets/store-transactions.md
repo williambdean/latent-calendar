@@ -50,7 +50,7 @@ countries = ["United Kingdom", "Germany", "France"]
 (
     df_wide
     .loc[countries]
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()

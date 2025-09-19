@@ -52,7 +52,7 @@ df_wide = df.cal.aggregate_events("week_of_year", "started_at")
 
 (
     df_wide
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()
@@ -83,7 +83,7 @@ plot_storms = create_plot_storms_func(first_storm, second_storm)
 
 (
     df_wide
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()
@@ -111,7 +111,7 @@ def title_func(idx, row) -> str:
 
 (
     df_wide
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row(max_cols=2, title_func=title_func)
 )
 fig = plt.gcf()
@@ -162,9 +162,6 @@ member        2023-06-26 until 2023-07-02           7949           8960         
 Visualizing this data, we can see the heavy impact of the Sunday weather for casual riders and members alike but not enough to ruin the holiday weekend.
 
 ```python
-
-
-
 def replace_index(ser: pd.Series, index: pd.Index) -> pd.Series:
     ser.index = index
     return ser

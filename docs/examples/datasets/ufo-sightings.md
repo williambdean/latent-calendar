@@ -64,7 +64,7 @@ for aggregation, ax in zip(["dow", "hour"], axes.ravel()[1:]):
     (
         df_5_year
         .cal.sum_over_vocab(aggregation=aggregation)
-        .cal.normalize("probs")
+        .cal.divide_by_sum()
         .mul(100)
         .T.plot(ax=ax)
     )
