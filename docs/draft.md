@@ -13,7 +13,7 @@ df_member_casual = df.cal.aggregate_events("member_casual", timestamp_col="start
 
 (
     df_member_casual
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()
