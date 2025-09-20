@@ -105,10 +105,6 @@ def sum_over_vocab(
         DataFrame columns associated with the aggregation
 
     """
-    if aggregation not in {"dow", "hour"}:
-        msg = "The aggregation must be hour or dow"
-        raise ValueError(msg)
-
     if not isinstance(df.columns, pd.MultiIndex):
         raise ValueError("The columns must be a MultiIndex of day_of_week and hour.")
 
