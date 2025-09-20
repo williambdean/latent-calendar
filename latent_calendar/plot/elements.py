@@ -4,6 +4,8 @@ Includes x-axis, y-axis, and their settings, as well as the calendar events.
 
 """
 
+from typing import Literal
+
 import calendar
 from dataclasses import dataclass, field, replace
 
@@ -52,11 +54,8 @@ class TimeLabeler:
     def get_hours(self) -> tuple[list[int], list[str]]:
         return range(HOURS_IN_DAY + 1)[:: self.stride]
 
-    def create_labels(self, ax: plt.Axes, axis: str = "y") -> None:
+    def create_labels(self, ax: plt.Axes, axis: Literal["x", "y"] = "y") -> None:
         """Create the hour labels on the plot ax."""
-        if axis not in {"x", "y"}:
-            raise ValueError("Only supported for the x and y.")
-
         hours = self.get_hours()
         hour_name_func = self.label if self.display else self.empty_label
         hour_names = hour_name_func(hours)
@@ -110,7 +109,7 @@ class DayLabeler:
 
         return self.days_of_week[self.day_start :] + self.days_of_week[: self.day_start]
 
-    def create_labels(self, ax: plt.Axes, axis: str = "x") -> None:
+    def create_labels(self, ax: plt.Axes, axis: Literal["x", "y"] = "x") -> None:
         """Create the labels for the plot."""
         getattr(ax, f"set_{axis}lim")(0, DAYS_IN_WEEK)
         getattr(ax, f"set_{axis}ticks")(

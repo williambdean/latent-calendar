@@ -1,5 +1,7 @@
 """Processing off calendar distribution."""
 
+from typing import Literal
+
 import pandas as pd
 import numpy as np
 
@@ -89,7 +91,10 @@ def sum_over_segments(df: pd.DataFrame, df_segments: pd.DataFrame) -> pd.DataFra
     )
 
 
-def sum_over_vocab(df: pd.DataFrame, aggregation: str = "dow") -> pd.DataFrame:
+def sum_over_vocab(
+    df: pd.DataFrame,
+    aggregation: Literal["dow", "hour"] = "dow",
+) -> pd.DataFrame:
     """Sum the wide DataFrame columns to hours or dow.
 
     Args:
@@ -100,10 +105,6 @@ def sum_over_vocab(df: pd.DataFrame, aggregation: str = "dow") -> pd.DataFrame:
         DataFrame columns associated with the aggregation
 
     """
-    if aggregation not in {"dow", "hour"}:
-        msg = "The aggregation must be hour or dow"
-        raise ValueError(msg)
-
     if not isinstance(df.columns, pd.MultiIndex):
         raise ValueError("The columns must be a MultiIndex of day_of_week and hour.")
 
