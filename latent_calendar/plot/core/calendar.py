@@ -1,6 +1,7 @@
 from itertools import repeat
 from typing import Any, Callable, Generator
 
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -326,7 +327,8 @@ def plot_dataframe_grid_across_column(
         raise KeyError(msg)
 
     values = df.loc[:, grid_col].dropna().unique()
-    values.sort()
+    # Use np.sort() for pandas 3.0 compatibility (ArrowStringArray has no sort() method)
+    values = np.sort(values)
 
     total = len(values)
 
