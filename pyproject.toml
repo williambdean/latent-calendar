@@ -85,6 +85,7 @@ legacy_tox_ini = """
     isolated_build = true
     env_list =
         # tox and distutils
+        py314
         py313
         py312
         py311
@@ -95,7 +96,7 @@ legacy_tox_ini = """
         pytest
         pytest-mpl
         pytest-cov
-        pymc
+        py310,py311,py312,py313: pymc
         polars
     commands = pytest
 """
