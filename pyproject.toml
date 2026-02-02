@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "pandas>=1.0.0",
@@ -31,7 +32,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pymc = ["pymc>=5.0.0"]
+pymc = [
+    "pymc>=5.27.0; python_version >= '3.11'",
+    "pymc>=5.0.0,<5.27.0; python_version < '3.11'",
+]
 
 [project.urls]
 Homepage = "https://williambdean.github.io/latent-calendar/"
@@ -84,6 +88,7 @@ legacy_tox_ini = """
     isolated_build = true
     env_list =
         # tox and distutils
+        py314
         py313
         py312
         py311
