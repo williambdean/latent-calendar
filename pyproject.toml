@@ -1,6 +1,6 @@
 [project]
 name = "latent-calendar"
-version = "1.7.0"
+version = "1.8.0"
 description = "Analyzing and modeling weekly calendar distributions using latent components"
 authors = [{ name = "Will Dean", email = "wd60622@gmail.com" }]
 requires-python = ">=3.10,<4.0"
