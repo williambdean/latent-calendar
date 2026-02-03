@@ -1,19 +1,22 @@
 """Generate some fake data for various purposes."""
 
 import numpy as np
+from numpy import typing as npt
 import pandas as pd
 
 from latent_calendar.const import FULL_VOCAB
+from latent_calendar.model.latent_calendar import LatentCalendar
 
 try:
     import pymc as pm
     from pytensor.tensor import TensorVariable
+    from pytensor import tensor as pt
 except ImportError:
 
     class TensorVariable:
         pass
 
-    class PyMC:
+    class MockModule:
         def __getattr__(self, name):
             msg = (
                 "PyMC is not installed."
@@ -22,7 +25,8 @@ except ImportError:
             )
             raise ImportError(msg)
 
-    pm = PyMC()
+    pm = MockModule()
+    pt = MockModule()
 
 
 def wide_format_dataframe(
@@ -60,31 +64,23 @@ def define_single_user_samples(
     return travel_style_user, time_slots
 
 
-def sample_from_lda(
-    components_prior: np.ndarray | TensorVariable,
-    components_time_slots_prior: np.ndarray | TensorVariable,
-    n_samples: np.ndarray,
-    random_state: int | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Sample from LDA model.
+N_SAMPLES = Union[npt.NDArray[np.int_], int]
+SAMPLE_RESULT = Tuple[pd.DataFrame, pd.DataFrame]
 
-    Args:
-        components_prior: prior probability of each component (n_components, )
-        components_time_slots_prior: prior for time slots (n_components, n_time_slots)
-        n_samples: number of samples for each user (n_user, )
-        random_state: random state for sampling
 
-    Returns:
-        probability DataFrame (n_user, n_components) and event count DataFrame with (n_user, n_time_slots) with each row summing up to `n`
-
-    """
+def _sample_lda(
+    travel_style: npt.NDArray[np.float_],
+    time_slot_styles: npt.NDArray[np.float_],
+    n_samples: N_SAMPLES,
+    random_state: Optional[int] = None,
+) -> SAMPLE_RESULT:
     rng = np.random.default_rng(random_state)
 
     user_travel_style_data = []
     user_time_slot_data = []
 
-    travel_style = pm.Dirichlet.dist(components_prior)
-    time_slot_styles = pm.Dirichlet.dist(components_time_slots_prior)
+    if isinstance(n_samples, int):
+        n_samples = [n_samples]
 
     for n in n_samples:
         _, user_time_slots = define_single_user_samples(
@@ -102,3 +98,60 @@ def sample_from_lda(
     df_user_time_slots = pd.DataFrame(user_time_slot_data)
 
     return df_user_travel_style, df_user_time_slots
+
+
+def sample_from_lda(
+    components_prior: Union[np.ndarray, TensorVariable],
+    components_time_slots_prior: Union[np.ndarray, TensorVariable],
+    n_samples: N_SAMPLES,
+    random_state: Optional[int] = None,
+) -> SAMPLE_RESULT:
+    """Sample from LDA model.
+
+    Args:
+        components_prior: prior probability of each component (n_components, )
+        components_time_slots_prior: prior for time slots (n_components, n_time_slots)
+        n_samples: number of samples for all users or for each user (n_user, )
+        random_state: random state for sampling
+
+    Returns:
+        probability DataFrame (n_user, n_components) and event count DataFrame with (n_user, n_time_slots) with each row summing up to `n`
+
+    """
+
+    travel_style = pm.Dirichlet.dist(components_prior)
+    time_slot_styles = pm.Dirichlet.dist(components_time_slots_prior)
+
+    return _sample_lda(
+        travel_style=travel_style,
+        time_slot_styles=time_slot_styles,
+        n_samples=n_samples,
+        random_state=random_state,
+    )
+
+
+def sample_from_latent_calendar(
+    latent_calendar: LatentCalendar,
+    n_samples: Union,
+    random_state: Optional[int] = None,
+) -> SAMPLE_RESULT:
+    """Sample from a latent calendar model.
+
+    Args:
+        latent_calendar: fitted latent calendar model
+        n_samples: number of rows to sample
+        random_state: random state for reproducibility
+
+    Returns:
+        probability DataFrame (n_user, n_components) and event count DataFrame with (n_user, n_time_slots) with each row summing up to `n`
+
+    """
+    # TODO: Figure out how to best recreate based on the population
+    travel_style = pm.Dirichlet.dist(latent_calendar.component_distribution_)
+    time_slot_styles = pm.Dirichlet.dist(latent_calendar.components_)
+    return _sample_lda(
+        travel_style=travel_style,
+        time_slot_styles=time_slot_styles,
+        n_samples=n_samples,
+        random_state=random_state,
+    )
