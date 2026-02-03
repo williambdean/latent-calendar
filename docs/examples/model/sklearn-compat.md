@@ -9,11 +9,11 @@ Here are a few examples but feel free to get creative and combine them all toget
 
 ## Pipelines
 
-`LatentCalendar` can be used in `scikit-learn` pipelines. The `tranform` method will be used based on the `TransformerMixin` base of `LatentDirichletAllocation`. 
+`LatentCalendar` can be used in `scikit-learn` pipelines. The `tranform` method will be used based on the `TransformerMixin` base of `LatentDirichletAllocation`.
 
 
 ```python
-from sklearn.pipeline import Pipeline 
+from sklearn.pipeline import Pipeline
 from sklearn.mixture import GaussianMixture
 
 from latent_calendar import LatentCalendar
@@ -80,7 +80,7 @@ class RemoveLowVolumeTimeSlots(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
         return self.model.predict(X.loc[:, self.columns_to_keep])
-     
+
     def predict(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
         X_pred = self.model.predict(X.loc[:, self.columns_to_keep])
         return X_pred.reindex(self.original_columns, fill_value=0, axis=1)

@@ -1,4 +1,4 @@
 ---
 comments: true
 ---
-::: latent_calendar.plot.config 
+::: latent_calendar.plot.config

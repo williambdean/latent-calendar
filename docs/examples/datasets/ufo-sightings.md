@@ -33,12 +33,12 @@ df_wide = df.cal.aggregate_events("year", "Date_time")
 df_5_year = df_wide.tail(5)
 ```
 
-which has the data in the wide format where each row is a weekly calendar. 
+which has the data in the wide format where each row is a weekly calendar.
 
 ```text
-day_of_week  0                                                                                  1     ...  5     6                                                                         
+day_of_week  0                                                                                  1     ...  5     6
 hour        0  1  2  3  4  5  6  7   8   9   10  11   12  13  14   15  16 17 18 19 20 21 22 23 0  1   ... 22 23 0  1  2  3  4  5  6  7  8  9   10  11  12  13  14   15 16 17 18 19 20 21 22 23
-Country                                                                                               ...                                                                                  
+Country                                                                                               ...
 Australia    0  0  0  0  0  0  0  0   0  27   6  19   20   7   2  105  27  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0  11  37  20   0  16    0  0  0  0  0  0  0  0  0
 Austria      0  0  0  0  0  0  0  0   9  55  81   0   18   0   0   33   0  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0  37    0  0  0  0  0  0  0  0  0
 Bahrain      0  0  0  0  0  0  0  0   0   0   1   6    0  13   0    0   0  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0    0  0  0  0  0  0  0  0  0
@@ -60,11 +60,11 @@ axes[0].set(
     title="Weekly UFO sightings",
 )
 
-for aggregation, ax in zip(["dow", "hour"], axes.ravel()[1:]): 
+for aggregation, ax in zip(["dow", "hour"], axes.ravel()[1:]):
     (
         df_5_year
         .cal.sum_over_vocab(aggregation=aggregation)
-        .cal.normalize("probs")
+        .cal.divide_by_sum()
         .mul(100)
         .T.plot(ax=ax)
     )
@@ -81,7 +81,7 @@ axes[1].set(
 axes[2].set(
     title="Chance of UFO sighting by hour of day",
     xlabel="Hour of day",
-    ylabel="", 
+    ylabel="",
 )
 fig.suptitle("UFO sightings over 5 years")
 plt.show()

@@ -1,13 +1,13 @@
-"""Generalize the iteration to support different data formats. Namely, 
+"""Generalize the iteration to support different data formats. Namely,
 
-- 2d numpy array 
+- 2d numpy array
 - 1d numpy array (long format)
-- pandas Series 
-- pandas DataFrame with various columns 
+- pandas Series
+- pandas DataFrame with various columns
 
 This powers the calendar plot and is passed into the `plot_calendar` function.
 
-Examples: 
+Examples:
     Plot calendar based on 1d numpy array.
 
     ```python
@@ -40,7 +40,7 @@ Examples:
 
     data = np.ones((7, 24 * 2))
     plot_calendar(
-        iterate_matrix(data), 
+        iterate_matrix(data),
     )
     ```
 
@@ -48,7 +48,7 @@ Examples:
 
 from dataclasses import dataclass
 from itertools import repeat
-from typing import Any, List, Tuple, Optional, Generator, Union, Iterable
+from typing import Any, Generator, Iterable
 
 import numpy as np
 import pandas as pd
@@ -99,17 +99,17 @@ def iterate_series(calendar_data: pd.Series) -> CALENDAR_ITERATION:
     yield from iterate_long_array(long_array)
 
 
-REPEATABLE = Union[pd.Series, Iterable[float]]
+REPEATABLE = pd.Series | Iterable[float]
 
 
 VALUE_DEFAULT = 1
 
-FRAME_ITER = Tuple[pd.Series, pd.Series, pd.Series, REPEATABLE]
+FRAME_ITER = tuple[pd.Series, pd.Series, pd.Series, REPEATABLE]
 
 
 class DataFrameConfig:
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         raise NotImplementedError("columns property needs to be implemented.")
 
     def extract_columns(self) -> FRAME_ITER:
@@ -123,7 +123,10 @@ class DataFrameConfig:
             raise KeyError(msg)
 
     def _default_repeat(
-        self, df: pd.DataFrame, key: Optional[str], default_value: Any
+        self,
+        df: pd.DataFrame,
+        key: str | None,
+        default_value: Any,
     ) -> REPEATABLE:
         return repeat(default_value) if key not in df.columns else df[key]
 
@@ -138,7 +141,7 @@ class IterConfig(DataFrameConfig):
     value: str = "value"
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         return [self.day, self.start, self.end]
 
     def extract_columns(self, df: pd.DataFrame) -> FRAME_ITER:
@@ -154,8 +157,8 @@ class IterConfig(DataFrameConfig):
 @dataclass
 class StartEndConfig(DataFrameConfig):
     start: str
-    end: Optional[str] = None
-    minutes: Optional[int] = None
+    end: str | None = None
+    minutes: int | None = None
     value: str = "value"
 
     def __post_init__(self) -> None:
@@ -166,7 +169,7 @@ class StartEndConfig(DataFrameConfig):
             self.minutes = 5
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         return [self.start, self.end]
 
     def extract_columns(self, df: pd.DataFrame) -> FRAME_ITER:
@@ -198,7 +201,7 @@ class VocabIterConfig(DataFrameConfig):
     value: str = "value"
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         return [self.vocab]
 
     def extract_columns(self, df: pd.DataFrame) -> FRAME_ITER:

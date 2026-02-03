@@ -1,7 +1,7 @@
 ---
 comments: true
 ---
-```python 
+```python
 import matplotlib.pyplot as plt
 
 from latent_calendar.datasets import load_online_transactions
@@ -28,9 +28,9 @@ df_wide.head()
 ```
 
 ```text
-day_of_week  0                                                                                  1     ...  5     6                                                                         
+day_of_week  0                                                                                  1     ...  5     6
 hour        0  1  2  3  4  5  6  7   8   9   10  11   12  13  14   15  16 17 18 19 20 21 22 23 0  1   ... 22 23 0  1  2  3  4  5  6  7  8  9   10  11  12  13  14   15 16 17 18 19 20 21 22 23
-Country                                                                                               ...                                                                                  
+Country                                                                                               ...
 Australia    0  0  0  0  0  0  0  0   0  27   6  19   20   7   2  105  27  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0  11  37  20   0  16    0  0  0  0  0  0  0  0  0
 Austria      0  0  0  0  0  0  0  0   9  55  81   0   18   0   0   33   0  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0  37    0  0  0  0  0  0  0  0  0
 Bahrain      0  0  0  0  0  0  0  0   0   0   1   6    0  13   0    0   0  0  0  0  0  0  0  0  0  0  ...  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0    0  0  0  0  0  0  0  0  0
@@ -44,13 +44,13 @@ We can clearly see the weekly hours of operation for these countries. Even thoug
 
 The slight shift in hours for the UK might be the difference in time zones between the UK and the other countries. Maybe it could be difference in buying patterns of these populations. Not sure but this visual gives us a good glance at the data and starting point to ask questions
 
-```python 
+```python
 countries = ["United Kingdom", "Germany", "France"]
 
 (
     df_wide
     .loc[countries]
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()

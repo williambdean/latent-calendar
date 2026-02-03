@@ -1,7 +1,5 @@
 import pytest
 
-from typing import List
-
 from latent_calendar.const import dicretized_hours
 
 
@@ -14,5 +12,5 @@ from latent_calendar.const import dicretized_hours
         (120, [0, 2, 4, 6, 8]),
     ],
 )
-def test_dicretized_hours(minutes: int, first_five: List[float]) -> None:
+def test_dicretized_hours(minutes: int, first_five: list[float]) -> None:
     assert dicretized_hours(minutes=minutes)[:5] == first_five

@@ -3,6 +3,8 @@ import pytest
 import pandas as pd
 import numpy as np
 
+from conjugate.distributions import Dirichlet
+
 from latent_calendar.generate import wide_format_dataframe
 
 from latent_calendar.const import TIME_SLOTS
@@ -57,6 +59,22 @@ def test_default_probabilities(dummy_model) -> None:
     assert dummy_model.predict(X).shape == (nrows, TIME_SLOTS)
 
 
+@pytest.fixture
+def conjugate_model() -> ConjugateModel:
+    return ConjugateModel()
+
+
+def test_conjugate_model(conjugate_model) -> None:
+    nrows = 10
+    X = np.ones((nrows, TIME_SLOTS))
+    conjugate_model.fit(X)
+
+    assert isinstance(conjugate_model.prior_, Dirichlet)
+
+    assert conjugate_model.transform(X).shape == (nrows, TIME_SLOTS)
+    assert conjugate_model.predict(X).shape == (nrows, TIME_SLOTS)
+
+
 @pytest.mark.parametrize(
     "estimator",
     [
@@ -69,4 +87,4 @@ def test_default_probabilities(dummy_model) -> None:
 def test_sklearn_documentation(estimator) -> None:
     instance = estimator()
 
-    assert "wd60622" in instance._get_doc_link()
+    assert "williambdean" in instance._get_doc_link()

@@ -1,4 +1,4 @@
-site_name: Latent Calendar 
+site_name: Latent Calendar
 
 theme:
   name: "material"
@@ -27,19 +27,19 @@ theme:
         name: Switch to light mode
 
 repo_name: Latent Calendar
-repo_url: https://github.com/wd60622/latent-calendar
+repo_url: https://github.com/williambdean/latent-calendar
 edit_uri: blob/main/docs/
-site_url: https://wd60622.github.io/latent-calendar
+site_url: https://williambdean.github.io/latent-calendar
 
-extra: 
-  homepage: https://wd60622.github.io/
+extra:
+  homepage: https://williambdean.github.io/
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/wd60622/latent-calendar
+      link: https://github.com/williambdean/latent-calendar
 
 nav:
   - Overview: index.md
-  - Modules: 
+  - Modules:
     - modules/extensions.md
     - modules/model.md
     - modules/generate.md
@@ -48,7 +48,7 @@ nav:
     - modules/segments.md
     - modules/const.md
     - modules/vocab.md
-    - Plot: 
+    - Plot:
       - modules/plot/core.md
       - modules/plot/elements.md
       - modules/plot/colors.md
@@ -56,18 +56,18 @@ nav:
       - modules/plot/grid_settings.md
       - modules/plot/iterate.md
   - methodology.md
-  - Examples: 
+  - Examples:
     - examples/cal-attribute.md
     - examples/create-segments.md
     - examples/generation-process.md
-    - Model: 
+    - Model:
       - examples/model/sklearn-compat.md
-    - Plotting: 
+    - Plotting:
       - examples/plotting/add-calendar-events.md
       - examples/plotting/event-frequency.md
       - examples/plotting/calendar-customization.md
       - examples/plotting/pandas-methods.md
-    - Datasets: 
+    - Datasets:
       - examples/datasets/bikes-in-chicago.md
       - examples/datasets/store-transactions.md
       - examples/datasets/ufo-sightings.md
@@ -82,6 +82,8 @@ plugins:
 
 
 markdown_extensions:
+  - admonition
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -89,10 +91,10 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
-  - pymdownx.arithmatex: 
+  - pymdownx.arithmatex:
       generic: true
 
-extra_javascript: 
+extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js 
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

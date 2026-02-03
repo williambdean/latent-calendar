@@ -1,4 +1,5 @@
 """Configuration file for plotting."""
+
 from dataclasses import dataclass
 
 

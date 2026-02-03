@@ -1,4 +1,4 @@
-from typing import Generator, Optional, Tuple
+from typing import Generator
 
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -37,7 +37,9 @@ def last_in_column(i: int, nrows: int, ncols: int, total: int) -> bool:
 
 
 def display_settings_in_grid(
-    nrows: int, ncols: int, total: Optional[int] = None
+    nrows: int,
+    ncols: int,
+    total: int | None = None,
 ) -> Generator[DisplaySettings, None, None]:
     """Helper for display logic in a grid.
 
@@ -57,15 +59,15 @@ def display_settings_in_grid(
     )
 
 
-PlotAxes = Tuple[DayLabeler, TimeLabeler]
+PlotAxes = tuple[DayLabeler, TimeLabeler]
 
 
 def default_plot_axes_in_grid(
     nrows: int,
     ncols: int,
-    total: Optional[int] = None,
-    day_labeler: Optional[DayLabeler] = None,
-    time_labeler: Optional[TimeLabeler] = None,
+    total: int | None = None,
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> Generator[PlotAxes, None, None]:
     """Additional layer on the display_settings_in_grid in order to modify the settings.
 
@@ -101,7 +103,7 @@ def grid_axes(nrows: int, ncols: int, total: int) -> Generator[plt.Axes, None, N
     yield from (fig.add_subplot(gs[i]) for i in range(total))
 
 
-def get_rows_and_cols(n: int, max_cols: int) -> Tuple[int, int]:
+def get_rows_and_cols(n: int, max_cols: int) -> tuple[int, int]:
     """Return the number of rows and cols."""
     nrows = max((n // max_cols) + 1, 1)
     ncols = min(n, max_cols)
@@ -115,9 +117,9 @@ def get_rows_and_cols(n: int, max_cols: int) -> Tuple[int, int]:
 def default_axes_and_grid_axes(
     total: int,
     max_cols: int,
-    day_labeler: Optional[DayLabeler] = None,
-    time_labeler: Optional[TimeLabeler] = None,
-) -> Generator[Tuple[plt.Axes, PlotAxes], None, None]:
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
+) -> Generator[tuple[plt.Axes, PlotAxes], None, None]:
     nrows, ncols = get_rows_and_cols(n=total, max_cols=max_cols)
     yield from zip(
         grid_axes(nrows=nrows, ncols=ncols, total=total),

@@ -1,13 +1,13 @@
-"""Example datasets for latent_calendar. 
+"""Example datasets for latent_calendar.
 
 All datasets are loaded from the web and cached locally if desired with the `local_save` argument.
 
 The datasets all include one or more columns that represent a datetime that can be used for calendar analysis.
 
-Examples: 
+Examples:
     Load the chicago bikes dataset:
 
-    ```python 
+    ```python
     from latent_calendar.datasets import load_chicago_bikes
 
     df = load_chicago_bikes()
@@ -25,6 +25,7 @@ Examples:
     ```
 
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -33,7 +34,9 @@ __all__ = ["load_online_transactions", "load_chicago_bikes", "load_ufo_sightings
 
 
 HERE = Path(__file__).parent
-BASE_URL = "https://raw.githubusercontent.com/wd60622/latent-calendar/main/datasets"
+BASE_URL = (
+    "https://raw.githubusercontent.com/williambdean/latent-calendar/main/datasets"
+)
 
 
 def _download_csv(name: str, **kwargs) -> pd.DataFrame:
@@ -49,11 +52,8 @@ def _create_local_file_name(name: str) -> Path:
 def _load_data(
     name: str, read_kwargs=None, save_kwargs=None, local_save: bool = False
 ) -> pd.DataFrame:
-    if read_kwargs is None:
-        read_kwargs = {}
-
-    if save_kwargs is None:
-        save_kwargs = {}
+    read_kwargs = read_kwargs or {}
+    save_kwargs = save_kwargs or {}
 
     file = _create_local_file_name(name)
 
@@ -67,11 +67,12 @@ def _load_data(
     return df
 
 
-def load_online_transactions(local_save: bool = False) -> pd.DataFrame:
+def load_online_transactions(local_save: bool = False, **read_kwargs) -> pd.DataFrame:
     """Kaggle Data for an non-store online retailer in UK. More information [here](https://www.kaggle.com/datasets/mashlyn/online-retail-ii-uci).
 
     Args:
         local_save: Whether to save the data locally if it doesn't exists.
+        read_kwargs: kwargs to pass to pd.read_csv
 
     Returns:
         Online transactions data from a non-store online retailer in UK.
@@ -80,12 +81,13 @@ def load_online_transactions(local_save: bool = False) -> pd.DataFrame:
     name = "online_retail_II"
     read_kwargs = {
         "parse_dates": ["InvoiceDate"],
+        **read_kwargs,
     }
 
     return _load_data(name, read_kwargs=read_kwargs, local_save=local_save)
 
 
-def load_chicago_bikes(local_save: bool = False) -> pd.DataFrame:
+def load_chicago_bikes(local_save: bool = False, **read_kwargs) -> pd.DataFrame:
     """Bikesharing trip level data from Chicago's Divvy system.
 
     Read more about the data source [here](https://data.cityofchicago.org/Transportation/Divvy-Trips/fg6s-gzvg).
@@ -94,6 +96,7 @@ def load_chicago_bikes(local_save: bool = False) -> pd.DataFrame:
 
     Args:
         local_save: Whether to save the data locally if it doesn't exists.
+        read_kwargs: kwargs to pass to pd.read_csv
 
     Returns:
         Trips data from Chicago's Divvy system.
@@ -103,23 +106,25 @@ def load_chicago_bikes(local_save: bool = False) -> pd.DataFrame:
     read_kwargs = {
         "parse_dates": ["started_at", "ended_at"],
         "index_col": ["ride_id"],
+        **read_kwargs,
     }
 
     return _load_data(name, read_kwargs=read_kwargs, local_save=local_save)
 
 
-def load_ufo_sightings(local_save: bool = False) -> pd.DataFrame:
+def load_ufo_sightings(local_save: bool = False, **read_kwargs) -> pd.DataFrame:
     """UFO sightings over time around the world. More info [here](https://www.kaggle.com/datasets/camnugent/ufo-sightings-around-the-world).
 
     Args:
         local_save: Whether to save the data locally if it doesn't exists.
+        read_kwargs: kwargs to pass to pd.read_csv
 
     Returns:
         Sighting level data for UFOs.
 
     """
     name = "ufo_sighting_data"
-    read_kwargs = {"low_memory": False}
+    read_kwargs = {"low_memory": False, **read_kwargs}
     save_kwargs = {"index": False}
 
     df = _load_data(

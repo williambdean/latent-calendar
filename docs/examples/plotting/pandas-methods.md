@@ -1,7 +1,7 @@
 ---
 comments: true
 ---
-DataFrames can be plotted in various ways with the `cal` attribute. 
+DataFrames can be plotted in various ways with the `cal` attribute.
 
 
 Event level data with the `cal.plot` or `cal.plot_across_column`

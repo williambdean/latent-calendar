@@ -1,11 +1,13 @@
-"""The specific elements on the calendar plot. 
+"""The specific elements on the calendar plot.
 
-Includes x-axis, y-axis, and their settings, as well as the calendar events. 
+Includes x-axis, y-axis, and their settings, as well as the calendar events.
 
 """
+
+from typing import Literal
+
 import calendar
 from dataclasses import dataclass, field, replace
-from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -47,16 +49,13 @@ class TimeLabeler:
     start: int = 0
     stride: int = 2
     display: bool = True
-    rotation: Optional[float] = 0
+    rotation: float | None = 0
 
-    def get_hours(self) -> Tuple[List[int], List[str]]:
+    def get_hours(self) -> tuple[list[int], list[str]]:
         return range(HOURS_IN_DAY + 1)[:: self.stride]
 
-    def create_labels(self, ax: plt.Axes, axis: str = "y") -> None:
+    def create_labels(self, ax: plt.Axes, axis: Literal["x", "y"] = "y") -> None:
         """Create the hour labels on the plot ax."""
-        if axis not in {"x", "y"}:
-            raise ValueError("Only supported for the x and y.")
-
         hours = self.get_hours()
         hour_name_func = self.label if self.display else self.empty_label
         hour_names = hour_name_func(hours)
@@ -67,10 +66,10 @@ class TimeLabeler:
         if axis == "y":
             ax.invert_yaxis()
 
-    def label(self, hrs: List[int]) -> List[str]:
+    def label(self, hrs: list[int]) -> list[str]:
         return [self.hour_formatter(hr) for hr in hrs]
 
-    def empty_label(self, hrs: List[int]) -> List[str]:
+    def empty_label(self, hrs: list[int]) -> list[str]:
         return ["" for _ in range(len(hrs))]
 
 
@@ -93,8 +92,8 @@ class DayLabeler:
     """
 
     day_start: int = 0
-    days_of_week: List[str] = field(default_factory=create_default_days)
-    rotation: Optional[float] = 45
+    days_of_week: list[str] = field(default_factory=create_default_days)
+    rotation: float | None = 45
     display: bool = True
 
     def __post_init__(self) -> None:
@@ -103,14 +102,14 @@ class DayLabeler:
             raise ValueError(msg)
 
     @property
-    def day_labels(self) -> List[str]:
+    def day_labels(self) -> list[str]:
         """What is added to the plot. If this is display, empty ticks."""
         if not self.display:
             return ["" for _ in range(DAYS_IN_WEEK)]
 
         return self.days_of_week[self.day_start :] + self.days_of_week[: self.day_start]
 
-    def create_labels(self, ax: plt.Axes, axis: str = "x") -> None:
+    def create_labels(self, ax: plt.Axes, axis: Literal["x", "y"] = "x") -> None:
         """Create the labels for the plot."""
         getattr(ax, f"set_{axis}lim")(0, DAYS_IN_WEEK)
         getattr(ax, f"set_{axis}ticks")(
@@ -211,8 +210,8 @@ class CalendarEvent:
 
     day: int
     start: float
-    end: Optional[float] = None
-    duration: Optional[float] = None
+    end: float | None = None
+    duration: float | None = None
     days: int = 1
 
     def __post_init__(self) -> None:
@@ -313,7 +312,7 @@ class CalendarEvent:
             days=self.days,
         )
 
-    def separate_events(self) -> List["CalendarEvent"]:
+    def separate_events(self) -> list["CalendarEvent"]:
         """Return list of events that represent the one event across different days.
 
         Examples:
@@ -347,9 +346,9 @@ class CalendarEvent:
     ) -> plt.Rectangle:
         """Create a rectangle matplotlib instance from the event."""
         height = self.end - self.start
-        assert (
-            height > 0.0
-        ), f"The rectangle doesn't have positive height. Hour start {self.start} > Hour end {self.end}"
+        assert height > 0.0, (
+            f"The rectangle doesn't have positive height. Hour start {self.start} > Hour end {self.end}"
+        )
 
         x = self.day if monday_start else (self.day + 1) % DAYS_IN_WEEK
         rect_kwargs = {

@@ -1,12 +1,12 @@
 """Handling the colors in the calendar plots.
 
-This module provides some helper function and some defaults. However, they might 
+This module provides some helper function and some defaults. However, they might
 not be the best of all purposes.
 
 Color maps here take floats to a color string. Usually a hex string.
 
 Example:
-    Create a color map for count data. 
+    Create a color map for count data.
 
     ```python
     cmap = create_default_cmap(max_value=10)
@@ -18,7 +18,7 @@ Example:
 
 """
 
-from typing import Callable, Tuple, Optional
+from typing import Callable
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb2hex, Normalize
@@ -29,7 +29,7 @@ import numpy as np
 from latent_calendar.plot.config import CONFIG
 
 
-CM = Callable[[float], Tuple[int, int, int, int]]
+CM = Callable[[float], tuple[int, int, int, int]]
 CMAP = Callable[[float], str]
 
 
@@ -62,9 +62,7 @@ class ColorMap(ScalarMappable):
         fig.colorbar(self, ax=ax, ticks=self.norm.ticks)
 
 
-def create_cmap(
-    max_value: float, min_value: float = 0.0, cm: Optional[CM] = None
-) -> CMAP:
+def create_cmap(max_value: float, min_value: float = 0.0, cm: CM | None = None) -> CMAP:
     """Create color map function.
 
     Args:
@@ -79,7 +77,7 @@ def create_cmap(
 
 
 def create_diverge_cmap(
-    center_value: float, range: float, cm: Optional[CM] = None
+    center_value: float, range: float, cm: CM | None = None
 ) -> CMAP:
     """Create color map function to emphasize a center value and deviation from that center.
 
@@ -108,7 +106,7 @@ def create_default_divergent_cmap() -> CMAP:
     return create_diverge_cmap(center_value=1.0, range=CONFIG.range)
 
 
-def settle_data_and_cmap(data, divergent: bool) -> Tuple[np.ndarray, CMAP]:
+def settle_data_and_cmap(data, divergent: bool) -> tuple[np.ndarray, CMAP]:
     """Return a tuple of transformed data and cmap for displaying that data."""
     if divergent:
         # Comparing the values to random rate

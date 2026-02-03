@@ -1,7 +1,5 @@
 import pytest
 
-from typing import Dict, List
-
 import pandas as pd
 import numpy as np
 
@@ -63,7 +61,7 @@ def test_iterator_long_array() -> None:
         {"day": [1, 2], "start": [1, 2], "end": [1, 2], "value": [1, 2]},
     ],
 )
-def test_iter_config_and_dataframe(data: Dict[str, List[int]]) -> None:
+def test_iter_config_and_dataframe(data: dict[str, list[int]]) -> None:
     config = IterConfig(day="day", start="start", end="end")
 
     df = pd.DataFrame(data)
@@ -103,7 +101,7 @@ def test_iter_config_missing_column() -> None:
         {"vocab": ["01 01", "01 02", "03 01"], "value": [1, 2, 3]},
     ],
 )
-def test_iter_vocab_config_and_dataframe(data: Dict[str, List[int]]) -> None:
+def test_iter_vocab_config_and_dataframe(data: dict[str, list[int]]) -> None:
     config = VocabIterConfig(vocab="vocab", value="value")
 
     df = pd.DataFrame(data)

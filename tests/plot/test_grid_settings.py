@@ -1,7 +1,5 @@
 import pytest
 
-from typing import List
-
 import numpy as np
 
 from latent_calendar.plot.grid_settings import (
@@ -26,7 +24,7 @@ from latent_calendar.plot.grid_settings import (
         ),
     ],
 )
-def test_is_left_edge(nrows: int, ncols: int, answer: List[List[bool]]) -> None:
+def test_is_left_edge(nrows: int, ncols: int, answer: list[list[bool]]) -> None:
     answer = np.array(answer)
 
     grid_size = nrows * ncols
@@ -83,7 +81,7 @@ def test_is_left_edge(nrows: int, ncols: int, answer: List[List[bool]]) -> None:
     ],
 )
 def test_last_in_column(
-    nrows: int, ncols: int, total: int, answer: List[List[bool]]
+    nrows: int, ncols: int, total: int, answer: list[list[bool]]
 ) -> None:
     answer = np.array(answer)
     grid_size = nrows * ncols

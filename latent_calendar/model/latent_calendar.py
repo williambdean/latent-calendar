@@ -12,10 +12,12 @@ X_pred = model.predict(X)
 
 
 """
-from typing import Optional
+
+from packaging.version import Version
 
 import numpy as np
 
+from sklearn import __version__ as sklearn_version
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import LatentDirichletAllocation as BaseLDA
 
@@ -51,7 +53,7 @@ class LatentCalendar(BaseLDA):
         )
 
     def predict(self, X: np.ndarray, y=None) -> np.ndarray:
-        """Return the marginal probabilities for a given row.
+        r"""Return the marginal probabilities for a given row.
 
         Marginalize out the loads via law of total probability
 
@@ -169,7 +171,7 @@ class ConjugateModel(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, a: Optional[np.ndarray] = None) -> None:
+    def __init__(self, a: np.ndarray | None = None) -> None:
         self.a = a
 
     def fit(self, X, y=None) -> "ConjugateModel":
@@ -181,17 +183,30 @@ class ConjugateModel(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None) -> np.ndarray:
-        return multinomial_dirichlet(X, self.prior_).dist.mean()
+        return multinomial_dirichlet(x=X, prior=self.prior_).dist.mean()
 
     def predict(self, X, y=None) -> np.ndarray:
         return self.transform(X, y=y)
 
 
-DOC_LINK_TEMPLATE = "https://wd60622.github.io/latent-calendar/modules/model/#latent_calendar.model.latent_calendar.{class_name}"
+DOC_LINK_TEMPLATE = "https://williambdean.github.io/latent-calendar/modules/model/#latent_calendar.model.latent_calendar.{class_name}"
 
 
-def url_param_generator(self, estimator):
+def url_param_generator_old(self, estimator):
     return {"class_name": estimator.__class__.__name__}
+
+
+def url_param_generator_new(self):
+    return {"class_name": self.__class__.__name__}
+
+
+switch_version = Version("1.5.2")
+current_version = Version(sklearn_version)
+url_param_generator = (
+    url_param_generator_new
+    if current_version >= switch_version
+    else url_param_generator_old
+)
 
 
 for klass in [LatentCalendar, DummyModel, MarginalModel, ConjugateModel]:

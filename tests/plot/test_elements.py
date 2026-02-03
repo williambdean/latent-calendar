@@ -1,7 +1,5 @@
 import pytest
 
-from typing import List
-
 from latent_calendar.const import DAYS_IN_WEEK
 from latent_calendar.plot.elements import CalendarEvent, TimeLabeler, DayLabeler
 
@@ -13,7 +11,7 @@ from latent_calendar.plot.elements import CalendarEvent, TimeLabeler, DayLabeler
         (6, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]),
     ],
 )
-def test_day_start(day_start: int, answer: List[str]) -> None:
+def test_day_start(day_start: int, answer: list[str]) -> None:
     day_labeler = DayLabeler(day_start=day_start)
     assert day_labeler.day_labels == answer
 
@@ -69,7 +67,7 @@ def test_multiday_tour(start: float, end: float, answer: bool) -> None:
         (12, 12.5, [CalendarEvent(day=6, start=12, end=12.5)]),
     ],
 )
-def test_separate_events(start: float, end: float, answer: List[CalendarEvent]):
+def test_separate_events(start: float, end: float, answer: list[CalendarEvent]):
     event = CalendarEvent(
         day=6,
         start=start,

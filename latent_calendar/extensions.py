@@ -1,20 +1,26 @@
-"""Pandas extensions for `latent-calendar` and primary interface for the package.
+"""DataFrame extensions for `latent-calendar` and primary interface for the package.
+
+!!! tip
+
+    The extensions work for both pandas and polars DataFrames. However, there is currently
+    limited functionality for polars DataFrames. Consider using polars for aggregation then
+    converting to pandas for plotting and model training.
 
 Provides a `cal` accessor to `DataFrame` and `Series` instances for easy transformation and plotting after import of `latent_calendar`.
 
-Functionality includes: 
+Functionality includes:
 
 - aggregation of events to wide format
 - convolutions of wide formats
 - making transformations and predictions with models
 - plotting of events, predictions, and comparisons as calendars
 
-Each `DataFrame` will be either at event level or an aggregated wide format. 
+Each `DataFrame` will be either at event level or an aggregated wide format.
 
-Methods that end in `row` or `by_row` will be for wide format DataFrames and will plot each row as a calendar. 
+Methods that end in `row` or `by_row` will be for wide format DataFrames and will plot each row as a calendar.
 
-Examples: 
-    Plotting an event level Series as a calendar 
+Examples:
+    Plotting an event level Series as a calendar
 
     ```python
     import pandas as pd
@@ -53,9 +59,9 @@ Examples:
 
     ![Customer Transactions](./../images/customer-transactions.png)
 
-    Train a model and plot predictions 
+    Train a model and plot predictions
 
-    ```python 
+    ```python
     from latent_calendar import LatentCalendar
 
     model = LatentCalendar(n_components=5, random_state=42)
@@ -72,10 +78,20 @@ Examples:
 
 
 """
-from typing import List, Optional, Union, Literal
+
+from typing import Literal
+
+import narwhals as nw
 
 import pandas as pd
 import numpy as np
+
+try:
+    import polars as pl
+
+    HAS_POLARS = True
+except ImportError:
+    HAS_POLARS = False
 
 import matplotlib.pyplot as plt
 
@@ -103,11 +119,15 @@ from latent_calendar.transformers import (
     create_raw_to_vocab_transformer,
     create_timestamp_feature_pipeline,
     LongToWide,
+    raw_to_aggregate,
+    create_timestamp_features,
+    create_discretized_hour,
+    create_vocab,
 )
 
 
 @pd.api.extensions.register_series_accessor("cal")
-class SeriesAccessor:
+class PandasSeriesAccessor:
     """Series accessor for latent_calendar accessed through `cal` attribute of Series."""
 
     def __init__(self, pandas_obj: pd.Series):
@@ -166,7 +186,10 @@ class SeriesAccessor:
         )
 
     def timestamp_features(
-        self, discretize: bool = True, minutes: int = 60, create_vocab: bool = True
+        self,
+        discretize: bool = True,
+        minutes: int = 60,
+        create_vocab: bool = True,
     ) -> pd.DataFrame:
         """Create day of week and proportion into day columns.
 
@@ -220,7 +243,7 @@ class SeriesAccessor:
     def conditional_probabilities(
         self,
         *,
-        level: Union[int, str] = 0,
+        level: int | str = 0,
     ) -> pd.Series:
         """Calculate conditional probabilities for each the row over the level.
 
@@ -250,7 +273,7 @@ class SeriesAccessor:
         time_labeler: TimeLabeler = TimeLabeler(),
         grid_lines: GridLines = GridLines(),
         monday_start: bool = True,
-        ax: Optional[plt.Axes] = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """Plot Series of timestamps as a calendar.
 
@@ -292,7 +315,7 @@ class SeriesAccessor:
         time_labeler: TimeLabeler = TimeLabeler(),
         grid_lines: GridLines = GridLines(),
         monday_start: bool = True,
-        ax: Optional[plt.Axes] = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """Plot Series of timestamps as a calendar.
 
@@ -319,7 +342,7 @@ class SeriesAccessor:
 
 
 @pd.api.extensions.register_dataframe_accessor("cal")
-class DataFrameAccessor:
+class PandasDataFrameAccessor:
     """DataFrame accessor for latent_calendar accessed through `cal` attribute of DataFrames."""
 
     def __init__(self, pandas_obj: pd.DataFrame):
@@ -327,6 +350,8 @@ class DataFrameAccessor:
 
     def divide_by_max(self) -> pd.DataFrame:
         """Divide each row by the max value.
+
+        Use before plotting to normalize the values to [0, 1].
 
         Returns:
             DataFrame with row-wise operations applied
@@ -337,6 +362,8 @@ class DataFrameAccessor:
     def divide_by_sum(self) -> pd.DataFrame:
         """Divide each row by the sum of the row.
 
+        Use to create an empirical probability distribution for each row.
+
         Returns:
             DataFrame with row-wise operations applied
 
@@ -346,53 +373,20 @@ class DataFrameAccessor:
     def divide_by_even_rate(self) -> pd.DataFrame:
         """Divide each row by the number of columns.
 
+        Use to create a relative rate compared to an even distribution. Greater than
+        1 indicates the row has more events than expected under an even distribution.
+
         Returns:
             DataFrame with row-wise operations applied
 
         """
         value = self._obj.shape[1]
-        return self._obj.div(value)
-
-    def normalize(self, kind: Literal["max", "probs", "even_rate"]) -> pd.DataFrame:
-        """Row-wise operations on DataFrame.
-
-        Args:
-            kind: The normalization to apply.
-
-        Returns:
-            DataFrame with row-wise operations applied
-
-        """
-        import warnings
-
-        def warn(message):
-            warnings.warn(message, DeprecationWarning, stacklevel=3)
-
-        warning_message = "This method will be deprecated in future versions"
-
-        funcs = {
-            "max": self.divide_by_max,
-            "probs": self.divide_by_sum,
-            "even_rate": self.divide_by_even_rate,
-        }
-
-        if kind not in funcs:
-            warn(warning_message)
-            raise ValueError(
-                f"kind must be one of ['max', 'probs', 'even_rate'], got {kind}"
-            )
-
-        func = funcs[kind]
-
-        warning_message = f"{warning_message} in favor of df.cal.{func.__name__}()"
-        warn(warning_message)
-
-        return func()
+        return self._obj.mul(value)
 
     def conditional_probabilities(
         self,
         *,
-        level: Union[int, str] = 0,
+        level: int | str = 0,
     ) -> pd.DataFrame:
         """Calculate conditional probabilities for each row over the level.
 
@@ -477,7 +471,7 @@ class DataFrameAccessor:
 
     def aggregate_events(
         self,
-        by: Union[str, List[str]],
+        by: str | list[str],
         timestamp_col: str,
         minutes: int = 60,
         as_multiindex: bool = True,
@@ -511,7 +505,10 @@ class DataFrameAccessor:
         )
         return transformer.fit_transform(self._obj)
 
-    def sum_over_vocab(self, aggregation: str = "dow") -> pd.DataFrame:
+    def sum_over_vocab(
+        self,
+        aggregation: Literal["dow", "hour"] = "dow",
+    ) -> pd.DataFrame:
         """Sum the wide format to day of week or hour of day.
 
         Args:
@@ -584,15 +581,15 @@ class DataFrameAccessor:
         self,
         start_col: str,
         *,
-        end_col: Optional[str] = None,
-        duration: Optional[int] = None,
+        end_col: str | None = None,
+        duration: int | None = None,
         alpha: float = None,
         cmap=None,
         day_labeler: DayLabeler = DayLabeler(),
         time_labeler: TimeLabeler = TimeLabeler(),
         grid_lines: GridLines = GridLines(),
         monday_start: bool = True,
-        ax: Optional[plt.Axes] = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """Plot DataFrame of timestamps as a calendar.
 
@@ -628,8 +625,8 @@ class DataFrameAccessor:
         start_col: str,
         grid_col: str,
         *,
-        end_col: Optional[str] = None,
-        duration: Optional[int] = None,
+        end_col: str | None = None,
+        duration: int | None = None,
         day_labeler: DayLabeler = DayLabeler(),
         time_labeler: TimeLabeler = TimeLabeler(),
         grid_lines: GridLines = GridLines(),
@@ -669,8 +666,8 @@ class DataFrameAccessor:
         self,
         *,
         max_cols: int = 3,
-        title_func: Optional[TITLE_FUNC] = None,
-        cmaps: Optional[Union[CMAP, ColorMap, CMAP_GENERATOR]] = None,
+        title_func: TITLE_FUNC | None = None,
+        cmaps: CMAP | ColorMap | CMAP_GENERATOR | None = None,
         day_labeler: DayLabeler = DayLabeler(),
         time_labeler: TimeLabeler = TimeLabeler(),
         grid_lines: GridLines = GridLines(),
@@ -797,3 +794,208 @@ class DataFrameAccessor:
             day_labeler=day_labeler,
             time_labeler=time_labeler,
         )
+
+
+if HAS_POLARS:
+
+    @pl.api.register_dataframe_namespace("cal")
+    class PolarsDataFrameAccessor:
+        """Polars extension accessor for latent_calendar.
+
+        Examples:
+
+        Register the accessor on a Polars DataFrame and use it to aggregate events.
+
+        ```python
+        import polars as pl
+
+        # Register the accessor
+        import latent_calendar
+
+        url = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet"
+        df = pl.read_parquet(url)
+
+        df_agg = df.cal.aggregate_events(
+            "PULocationID",
+            "tpep_pickup_datetime",
+        )
+        df_agg
+        ```
+
+        ```text
+        shape: (32_051, 4)
+        ┌──────────────┬─────────────┬──────┬────────────┐
+        │ PULocationID ┆ day_of_week ┆ hour ┆ num_events │
+        │ ---          ┆ ---         ┆ ---  ┆ ---        │
+        │ i32          ┆ i8          ┆ i64  ┆ i32        │
+        ╞══════════════╪═════════════╪══════╪════════════╡
+        │ 76           ┆ 2           ┆ 15   ┆ 16         │
+        │ 143          ┆ 0           ┆ 21   ┆ 123        │
+        │ 153          ┆ 4           ┆ 7    ┆ 2          │
+        │ 18           ┆ 3           ┆ 20   ┆ 2          │
+        │ 100          ┆ 4           ┆ 11   ┆ 350        │
+        │ …            ┆ …           ┆ …    ┆ …          │
+        │ 178          ┆ 6           ┆ 1    ┆ 1          │
+        │ 180          ┆ 2           ┆ 14   ┆ 3          │
+        │ 82           ┆ 6           ┆ 2    ┆ 2          │
+        │ 151          ┆ 0           ┆ 5    ┆ 28         │
+        │ 67           ┆ 2           ┆ 13   ┆ 2          │
+        └──────────────┴─────────────┴──────┴────────────┘
+        ```
+
+        """
+
+        def __init__(self, polars_obj):
+            self._obj = polars_obj
+
+        def timestamp_features(
+            self,
+            timestamp_col: str,
+            discretize: bool = True,
+            minutes: int = 60,
+            create_vocab: bool = True,
+        ):
+            """Create day of week and proportion into day columns for event level DataFrame.
+
+            Exposed as a method on Polars DataFrame for convenience. Use `cal.aggregate_events` instead to create the wide format DataFrame.
+
+            Args:
+                timestamp_col: The name of the timestamp column.
+                discretize: Whether to discretize the hour column.
+                minutes: The number of minutes to discretize by. Ingored if `discretize` is False.
+                create_vocab: Whether to create the vocab column.
+
+            Returns:
+                DataFrame with features added
+
+            """
+            transformer = create_timestamp_feature_pipeline(
+                timestamp_col=timestamp_col,
+                discretize=discretize,
+                create_vocab=create_vocab,
+                minutes=minutes,
+                output="polars",
+            )
+
+            return transformer.fit_transform(self._obj)
+
+        def aggregate_events(
+            self,
+            by: str | list[str],
+            timestamp_col: str,
+            minutes: int = 60,
+            as_multiindex: bool = True,
+        ):
+            """Transform event level Polars DataFrame to aggregated.
+
+            !!! note
+
+                Wide format is not supported in Polars yet.
+
+            Args:
+                by: column(s) to use as index
+                timestamp_col: column to use as timestamp
+                minutes: The number of minutes to discretize by.
+                as_multiindex: whether to use MultiIndex columns
+
+            Returns:
+                DataFrame in wide format
+
+            """
+            return create_raw_to_vocab_transformer(
+                id_col=by if isinstance(by, str) else by[0],
+                timestamp_col=timestamp_col,
+                minutes=minutes,
+                additional_groups=None if isinstance(by, str) else by[1:],
+                as_multiindex=as_multiindex,
+                widen=False,
+            ).fit_transform(self._obj)
+
+    @pl.api.register_lazyframe_namespace("cal")
+    class PolarsLazyFrameAccessor:
+        """LazyFrame extension accessor for latent_calendar.
+
+        Examples:
+
+        ```python
+        import polars as pl
+
+        # Register the accessor
+        import latent_calendar
+
+        url = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet"
+        df = pl.read_parquet(url).lazy()
+
+        df_agg = df.cal.aggregate_events(
+            "PULocationID",
+            "tpep_pickup_datetime",
+        )
+        df_agg.collect()
+        ```
+
+        ```text
+        shape: (32_051, 4)
+        ┌──────────────┬─────────────┬──────┬────────────┐
+        │ PULocationID ┆ day_of_week ┆ hour ┆ num_events │
+        │ ---          ┆ ---         ┆ ---  ┆ ---        │
+        │ i32          ┆ i8          ┆ i64  ┆ i32        │
+        ╞══════════════╪═════════════╪══════╪════════════╡
+        │ 207          ┆ 1           ┆ 8    ┆ 2          │
+        │ 232          ┆ 2           ┆ 10   ┆ 19         │
+        │ 97           ┆ 2           ┆ 9    ┆ 11         │
+        │ 74           ┆ 5           ┆ 10   ┆ 49         │
+        │ 92           ┆ 1           ┆ 6    ┆ 2          │
+        │ …            ┆ …           ┆ …    ┆ …          │
+        │ 1            ┆ 4           ┆ 16   ┆ 12         │
+        │ 34           ┆ 3           ┆ 14   ┆ 1          │
+        │ 74           ┆ 1           ┆ 23   ┆ 24         │
+        │ 102          ┆ 0           ┆ 5    ┆ 1          │
+        │ 212          ┆ 0           ┆ 10   ┆ 3          │
+        └──────────────┴─────────────┴──────┴────────────┘
+        ```
+
+
+        """
+
+        def __init__(self, obj):
+            self._obj = obj
+
+        def timestamp_features(
+            self,
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            """Create day of week and proportion into day columns for event level LazyFrame."""
+            return (
+                nw.from_native(self._obj)
+                .pipe(
+                    create_timestamp_features,
+                    timestamp_col=timestamp_col,
+                )
+                .pipe(
+                    create_discretized_hour,
+                    col="hour",
+                    minutes=minutes,
+                )
+                .pipe(
+                    create_vocab,
+                    hour_col="hour",
+                    day_of_week_col="day_of_week",
+                )
+                .to_native()
+            )
+
+        def aggregate_events(
+            self,
+            by: str | list[str],
+            timestamp_col: str,
+            minutes: int = 60,
+        ) -> pl.LazyFrame:
+            """Aggregate the event level Polars LazyFrame to aggregated format."""
+            return self._obj.pipe(
+                raw_to_aggregate,
+                id_col=by if isinstance(by, str) else by[0],
+                timestamp_col=timestamp_col,
+                minutes=minutes,
+                additional_groups=None if isinstance(by, str) else by[1:],
+            )

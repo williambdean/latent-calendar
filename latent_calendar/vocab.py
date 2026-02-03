@@ -1,9 +1,8 @@
-"""Operations and relationship with the "vocab" of the default time slots.
+"""Operations and relationship with the "vocab" of the default time slots."""
 
-"""
 from dataclasses import dataclass
 import calendar
-from typing import Callable, Dict, Tuple, Optional
+from typing import Callable
 
 import pandas as pd
 
@@ -35,7 +34,7 @@ def map_to_12_hour(hour: int) -> int:
 
 
 HOUR_FORMATTER = Callable[[int], str]
-HOUR_FORMATTERS: Dict[str, HOUR_FORMATTER] = {
+HOUR_FORMATTERS: dict[str, HOUR_FORMATTER] = {
     "24hr": lambda hr: f"{hr} O'Clock",
     "12_am_pm": lambda hr: f"{map_to_12_hour(hr)}{am_pm_of_hour(hr)}",
     "12hr": lambda hr: f"{map_to_12_hour(hr)} O'Clock",
@@ -72,8 +71,8 @@ class HourFormatter:
 
     """
 
-    midnight: Optional[str] = "Midnight"
-    noon: Optional[str] = "Noon"
+    midnight: str | None = "Midnight"
+    noon: str | None = "Noon"
     format_hour: HOUR_FORMATTER = HOUR_FORMATTERS["12hr"]
 
     def __call__(self, hr: int) -> str:
@@ -86,7 +85,7 @@ class HourFormatter:
         return self.format_hour(hr)
 
 
-def get_day_hour(vocab: str) -> Tuple[int, int]:
+def get_day_hour(vocab: str) -> tuple[int, int]:
     """Get the day and hour from the vocab."""
     day_str, hour_str = vocab.split(" ")
 

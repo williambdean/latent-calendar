@@ -1,12 +1,12 @@
-import pandas as pd 
+import pandas as pd
 
 import matplotlib.pyplot as plt
 
 import latent_calendar
 
 
-if __name__ == "__main__": 
-    # More information on the dataset: 
+if __name__ == "__main__":
+    # More information on the dataset:
     # https://posit-dev.github.io/great-tables/reference/data.pizzaplace.html#great_tables.data.pizzaplace
     file = "https://raw.githubusercontent.com/posit-dev/great-tables/main/great_tables/data/05-pizzaplace.csv"
 
@@ -30,7 +30,5 @@ if __name__ == "__main__":
         .cal.plot_row(ax=ax)
     )
     ax.set_title("Discretized Series cal.plot_row()")
-    
+
     plt.show()
-
-

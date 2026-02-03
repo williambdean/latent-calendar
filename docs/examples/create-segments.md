@@ -1,7 +1,7 @@
 ---
 comments: true
 ---
-Create some segments for a calendar: 
+Create some segments for a calendar:
 
 ```python
 import pandas as pd
@@ -11,7 +11,7 @@ from latent_calendar.segments import create_box_segment, stack_segments
 
 mornings = create_box_segment(
     day_start=0, day_end=7, hour_start=6, hour_end=11, name="Mornings"
-) 
+)
 afternoons = create_box_segment(
     day_start=0, day_end=7, hour_start=11, hour_end=16, name="Afternoons"
 )

@@ -1,6 +1,7 @@
 from itertools import repeat
-from typing import Any, Callable, Generator, Union, Optional
+from typing import Any, Callable, Generator
 
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -34,8 +35,8 @@ from latent_calendar.plot.iterate import (
 def plot_blank_calendar(
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
-    display_settings: Optional[DisplaySettings] = None,
-    ax: Optional[plt.Axes] = None,
+    display_settings: DisplaySettings | None = None,
+    ax: plt.Axes | None = None,
     grid_lines: GridLines = GridLines(),
     monday_start: bool = True,
 ) -> plt.Axes:
@@ -75,10 +76,10 @@ def plot_calendar(
     *,
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
-    display_settings: Optional[DisplaySettings] = None,
-    cmap: Optional[CMAP] = None,
-    alpha: Optional[float] = None,
-    ax: Optional[plt.Axes] = None,
+    display_settings: DisplaySettings | None = None,
+    cmap: CMAP | None = None,
+    alpha: float | None = None,
+    ax: plt.Axes | None = None,
     grid_lines: GridLines = GridLines(),
     monday_start: bool = True,
 ) -> plt.Axes:
@@ -133,9 +134,9 @@ def plot_series_as_calendar(
     grid_lines: GridLines = GridLines(),
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
-    cmap: Optional[CMAP] = None,
-    alpha: Optional[float] = None,
-    ax: Optional[plt.Axes] = None,
+    cmap: CMAP | None = None,
+    alpha: float | None = None,
+    ax: plt.Axes | None = None,
     monday_start: bool = True,
 ) -> plt.Axes:
     """Simple Wrapper about plot_calendar in order to plot Series in various formats
@@ -176,9 +177,9 @@ def plot_dataframe_as_calendar(
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
     grid_lines: GridLines = GridLines(),
-    cmap: Optional[CMAP] = None,
-    alpha: Optional[float] = None,
-    ax: Optional[plt.Axes] = None,
+    cmap: CMAP | None = None,
+    alpha: float | None = None,
+    ax: plt.Axes | None = None,
     monday_start: bool = True,
 ) -> plt.Axes:
     """Simple Wrapper about plot_calendar in order to plot DataFrame in various formats
@@ -233,10 +234,10 @@ class CalendarFormatError(Exception):
 def plot_calendar_by_row(
     df: pd.DataFrame,
     max_cols: int = 3,
-    title_func: Optional[TITLE_FUNC] = None,
-    day_labeler: Optional[DayLabeler] = None,
-    time_labeler: Optional[TimeLabeler] = None,
-    cmaps: Optional[Union[CMAP, ColorMap, CMAP_GENERATOR]] = None,
+    title_func: TITLE_FUNC | None = None,
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
+    cmaps: CMAP | ColorMap | CMAP_GENERATOR | None = None,
     grid_lines: GridLines = GridLines(),
     monday_start: bool = True,
 ) -> None:
@@ -299,10 +300,10 @@ def plot_calendar_by_row(
 def plot_dataframe_grid_across_column(
     df: pd.DataFrame,
     grid_col: str,
-    config: Optional[DataFrameConfig] = None,
+    config: DataFrameConfig | None = None,
     max_cols: int = 3,
     *,
-    alpha: Optional[float] = None,
+    alpha: float | None = None,
     monday_start: bool = True,
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
@@ -326,7 +327,8 @@ def plot_dataframe_grid_across_column(
         raise KeyError(msg)
 
     values = df.loc[:, grid_col].dropna().unique()
-    values.sort()
+    # Use np.sort() for pandas 3.0 compatibility (ArrowStringArray has no sort() method)
+    values = np.sort(values)
 
     total = len(values)
 

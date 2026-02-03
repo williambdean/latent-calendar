@@ -1,8 +1,9 @@
-"""Plotting functions for latent calendar. 
+"""Plotting functions for latent calendar.
 
 These functions and classes build every calendar plot.
 
 """
+
 from latent_calendar.plot.colors import (  # noqa
     create_cmap,
     create_diverge_cmap,

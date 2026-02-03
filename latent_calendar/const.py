@@ -1,8 +1,7 @@
-"""Constants used to create the full vocabulary of the dataset.
-"""
+"""Constants used to create the full vocabulary of the dataset."""
+
 import calendar
 from itertools import product
-from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -18,7 +17,7 @@ TIME_SLOTS = DAYS_IN_WEEK * HOURS_IN_DAY
 
 EVEN_PROBABILITY = 1 / TIME_SLOTS
 
-DAY_LOOKUP: Dict[str, int] = {
+DAY_LOOKUP: dict[str, int] = {
     **{calendar.day_abbr[value]: value for value in range(DAYS_IN_WEEK)},
     **{calendar.day_name[value]: value for value in range(DAYS_IN_WEEK)},
 }
@@ -31,7 +30,7 @@ def format_dow_hour(day_of_week: int, hour: int) -> str:
     return f"{day_of_week:02} {hour:02}"
 
 
-def dicretized_hours(minutes: int) -> List[float]:
+def dicretized_hours(minutes: int) -> list[float]:
     step = minutes / 60
     hours = np.arange(0, HOURS_IN_DAY, step)
     if minutes % 60 == 0:
@@ -41,8 +40,10 @@ def dicretized_hours(minutes: int) -> List[float]:
 
 
 def create_full_vocab(
-    days_in_week: int, minutes: int, as_multiindex: bool = True
-) -> Union[pd.MultiIndex, List[str]]:
+    days_in_week: int,
+    minutes: int,
+    as_multiindex: bool = True,
+) -> pd.MultiIndex | list[str]:
     """Create the full vocabulary of the dataset.
 
     Args:

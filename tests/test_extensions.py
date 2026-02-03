@@ -1,5 +1,7 @@
 import pytest
 
+import polars as pl
+import polars.testing
 import pandas as pd
 import numpy as np
 
@@ -70,7 +72,7 @@ def df_segments() -> pd.DataFrame:
     ).T
 
 
-def test_max_normalize(df) -> None:
+def test_divide_by_max(df) -> None:
     df_max_result = pd.DataFrame(
         {
             "a": [1 / 3, 2 / 3, 1],
@@ -78,18 +80,13 @@ def test_max_normalize(df) -> None:
         }
     ).T
 
-    with pytest.warns(DeprecationWarning):
-        pd.testing.assert_frame_equal(
-            df.cal.normalize("max"),
-            df_max_result,
-        )
     pd.testing.assert_frame_equal(
         df.cal.divide_by_max(),
         df_max_result,
     )
 
 
-def test_sum_normalize(df) -> None:
+def test_divide_by_sum(df) -> None:
     df_probs_result = pd.DataFrame(
         {
             "a": [1 / 6, 2 / 6, 3 / 6],
@@ -97,41 +94,40 @@ def test_sum_normalize(df) -> None:
         }
     ).T
 
-    with pytest.warns(DeprecationWarning):
-        pd.testing.assert_frame_equal(
-            df.cal.normalize("probs"),
-            df_probs_result,
-        )
-
     pd.testing.assert_frame_equal(
         df.cal.divide_by_sum(),
         df_probs_result,
     )
 
 
-def test_even_rate_normalize(df) -> None:
+def test_divide_by_even_rate(df) -> None:
     df_even_rate_result = pd.DataFrame(
         {
-            "a": [1 / 3, 2 / 3, 3 / 3],
-            "b": [4 / 3, 5 / 3, 6 / 3],
+            "a": [1 * 3, 2 * 3, 3 * 3],
+            "b": [4 * 3, 5 * 3, 6 * 3],
         }
     ).T
 
-    with pytest.warns(DeprecationWarning):
-        pd.testing.assert_frame_equal(
-            df.cal.normalize("even_rate"),
-            df_even_rate_result,
-        )
     pd.testing.assert_frame_equal(
         df.cal.divide_by_even_rate(),
         df_even_rate_result,
     )
 
 
-def test_unknown_normalize(df) -> None:
-    with pytest.warns(DeprecationWarning):
-        with pytest.raises(ValueError):
-            df.cal.normalize("unknown")
+def test_even_rate_probability_distribution(df) -> None:
+    df_even_rate_result = pd.DataFrame(
+        {
+            "a": [0.5, 1.0, 1.5],
+            "b": [0.8, 1.0, 1.2],
+        }
+    ).T
+
+    df_probs = df.div(df.sum(axis=1), axis=0)
+
+    pd.testing.assert_frame_equal(
+        df_probs.cal.divide_by_even_rate(),
+        df_even_rate_result,
+    )
 
 
 def test_all_dataframe_extensions(df, df_segments) -> None:
@@ -309,20 +305,23 @@ def test_dataframe_conditional_probabilities(
     pd.testing.assert_frame_equal(result, expected)
 
 
-def test_series_aggregate_events() -> None:
+@pytest.fixture(scope="module")
+def timestamps() -> list[str]:
+    return [
+        # 2021-01-01 is a Friday
+        "2021-01-01 00:00:00",
+        "2021-01-01 00:30:00",
+        "2021-01-01 01:00:00",
+        "2021-01-01 01:30:00",
+        "2021-01-01 01:45:00",
+        "2021-01-01 01:50:00",
+    ]
+
+
+def test_series_aggregate_events(timestamps) -> None:
     name = "events"
     ser = pd.Series(
-        pd.to_datetime(
-            [
-                # 2021-01-01 is a Friday
-                "2021-01-01 00:00:00",
-                "2021-01-01 00:30:00",
-                "2021-01-01 01:00:00",
-                "2021-01-01 01:30:00",
-                "2021-01-01 01:45:00",
-                "2021-01-01 01:50:00",
-            ]
-        ),
+        pd.to_datetime(timestamps),
         name=name,
     )
 
@@ -340,3 +339,26 @@ def test_series_aggregate_events() -> None:
     expected.loc[(4, 1.5)] = 3
 
     pd.testing.assert_series_equal(result, expected)
+
+
+@pytest.fixture
+def df_polars(timestamps) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "id": range(len(timestamps)),
+            "datetime": pl.Series(timestamps).str.to_datetime(),
+        }
+    )
+
+
+def test_polars_dataframe_extensions(df_polars) -> None:
+    assert hasattr(df_polars, "cal")
+
+    cal = df_polars.cal
+
+    df_features = cal.timestamp_features("datetime")
+
+    assert df_features.shape == (6, 5)
+
+    df_agg = cal.aggregate_events("id", "datetime")
+    assert df_agg.shape == (6, 4)

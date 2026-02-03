@@ -1,5 +1,6 @@
 """Plots including a model."""
-from typing import Iterable, Optional
+
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -329,7 +330,7 @@ def plot_model_components(
     model: LatentCalendar,
     max_cols: int = 5,
     divergent: bool = True,
-    components: Optional[Iterable[int]] = None,
+    components: Iterable[int] | None = None,
     day_labeler: DayLabeler = DayLabeler(),
     time_labeler: TimeLabeler = TimeLabeler(),
 ) -> None:

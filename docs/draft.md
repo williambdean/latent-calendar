@@ -13,7 +13,7 @@ df_member_casual = df.cal.aggregate_events("member_casual", timestamp_col="start
 
 (
     df_member_casual
-    .cal.normalize("max")
+    .cal.divide_by_max()
     .cal.plot_by_row()
 )
 fig = plt.gcf()
@@ -27,7 +27,7 @@ plt.show()
 
 The `LatentCalendar` models calendar data by breaking down each calendar into a mixture of `n_components` calendars. Read more on the methodology [here](./methodology.md).
 
-```python 
+```python
 from latent_calendar import LatentCalendar
 from latent_calendar.plot import plot_model_components
 
@@ -54,7 +54,7 @@ df_component_probs = df_stations.cal.transform(model=model)
 hist_kwargs = dict(bins=10, edgecolor="black", grid=False, layout=(1, 3))
 axes = df_component_probs.hist(**hist_kwargs)
 axes = axes.ravel()
-for ax in axes: 
+for ax in axes:
     ax.set_xlabel("Probability")
     title = ax.get_title()
     ax.set_title(f"Component {title}")
@@ -66,7 +66,7 @@ plt.show()
 
 ![Station Distribution](./images/station-distribution.png)
 
-The `predict` method recovers the joint distribution of the calendar data using the latent calendar components. 
+The `predict` method recovers the joint distribution of the calendar data using the latent calendar components.
 
 ```python
 stations = ["Wood St & Milwaukee Ave", "Theater on the Lake", "Wabash Ave & Grand Ave"]

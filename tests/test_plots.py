@@ -22,7 +22,7 @@ def test_blank_calendar() -> plt.Figure:
 
 @pytest.mark.mpl_image_compare
 def test_various_elements() -> plt.Figure:
-    """From the docs: https://wd60622.github.io/latent-calendar/examples/plotting/add-calendar-events/"""
+    """From the docs: https://williambdean.github.io/latent-calendar/examples/plotting/add-calendar-events/"""
     fig, ax = plt.subplots(figsize=(10, 10))
     plot_blank_calendar(ax=ax)
     event = CalendarEvent(day=0, start=12, duration=15)

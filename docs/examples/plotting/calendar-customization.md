@@ -8,7 +8,7 @@ Each calendar plot is made up of the following components:
 - Grid Lines
 - Events (Rectangles)
 
-The X axis and Y axis have default values but can be customized 
+The X axis and Y axis have default values but can be customized
 
 
 ```python
@@ -36,9 +36,9 @@ day_labeler = DayLabeler(days_of_week=["M", "T", "W", "Th", "F", "Sa", "Su"], ro
 hour_formatter = lambda hour: f"{hour}h"
 time_labeler = TimeLabeler(hour_formatter=hour_formatter, stride=4)
 plot_blank_calendar(
-    ax=ax, 
-    day_labeler=day_labeler, 
-    time_labeler=time_labeler, 
+    ax=ax,
+    day_labeler=day_labeler,
+    time_labeler=time_labeler,
 )
 ax.set_title("Custom Labels")
 
@@ -62,7 +62,7 @@ fig, axes = plt.subplots(ncols=2, nrows=1)
 ax = axes[0]
 day_labeler = DayLabeler(days_of_week=["M", "T", "W", "Th", "F", "Sa", "Su"], rotation=0, display=False)
 plot_blank_calendar(
-    day_labeler=day_labeler, 
+    day_labeler=day_labeler,
     ax=axes[0]
 )
 ax.set(title="No Day Labels")
@@ -88,7 +88,7 @@ from latent_calendar.segments.hand_picked import create_box_segment, stack_segme
 mornings = create_box_segment(
     hour_start=6,
     hour_end=11,
-    day_start=0, day_end=7, 
+    day_start=0, day_end=7,
     name="mornings"
 )
 
@@ -100,7 +100,7 @@ evenings = create_box_segment(
 )
 
 weekend_daytimes = create_box_segment(
-    hour_start=11, 
+    hour_start=11,
     hour_end=18,
     day_start=5, day_end=7,
     name="weekend daytimes"
@@ -112,7 +112,7 @@ df_segments = stack_segments([mornings, evenings, weekend_daytimes])
 (
     df_segments
     .cal.plot_by_row(
-        day_labeler=day_labeler, 
+        day_labeler=day_labeler,
         time_labeler=time_labeler
     )
 )

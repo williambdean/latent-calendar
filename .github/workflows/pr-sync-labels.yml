@@ -1,0 +1,19 @@
+name: "Sync Closing Issue Labels"
+on:
+- pull_request_target
+
+jobs:
+  sync:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+    - name: Sync labels with closing issues
+      uses: williambdean/closing-labels@v0.0.6
+      with:
+        exclude: "duplicate,help wanted,question"
+      env:
+        GH_TOKEN: ${{ github.token }}
