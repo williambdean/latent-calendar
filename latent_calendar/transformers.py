@@ -175,8 +175,31 @@ class HourDiscretizer(BaseEstimator, TransformerMixin):
 
 
 def create_vocab(X: FrameT, hour_col: str, day_of_week_col) -> FrameT:
-    day_of_week_part = nw.col(day_of_week_col).cast(nw.String).str.zfill(2)
-    hour_part = nw.col(hour_col).cast(nw.String).str.zfill(2)
+    """Create vocabulary column from day of week and hour.
+
+    Note: We use conditional logic instead of str.zfill(2) because narwhals' str.zfill()
+    is not supported for PySpark backend (as of narwhals 2.16.0). This workaround
+    specifically handles width=2 padding (sufficient for day_of_week 0-6 and hour 0-23).
+
+    tracking issue: [GitHub Issue](https://github.com/narwhals-dev/narwhals/issues/3442)
+
+    Equivalent to:
+        day_str = nw.col(day_of_week_col).cast(nw.String).str.zfill(2)
+        hour_str = nw.col(hour_col).cast(nw.String).str.zfill(2)
+    """
+    # Pad day_of_week to width 2: 0 -> "00", 1 -> "01", ..., 6 -> "06"
+    day_of_week_part = (
+        nw.when(nw.col(day_of_week_col) < 10)
+        .then(nw.concat_str([nw.lit("0"), nw.col(day_of_week_col).cast(nw.String)]))
+        .otherwise(nw.col(day_of_week_col).cast(nw.String))
+    )
+
+    # Pad hour to width 2: 0 -> "00", 1 -> "01", ..., 23 -> "23"
+    hour_part = (
+        nw.when(nw.col(hour_col) < 10)
+        .then(nw.concat_str([nw.lit("0"), nw.col(hour_col).cast(nw.String)]))
+        .otherwise(nw.col(hour_col).cast(nw.String))
+    )
 
     vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ").alias("vocab")
 

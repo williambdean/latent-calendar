@@ -58,6 +58,8 @@ def test_load_func_subset(load_func, local_file: str) -> None:
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 5
-    assert df.dtypes.eq("datetime64[ns]").sum() >= 1
+    # Check for datetime columns (pandas 3.0 uses datetime64[us] instead of datetime64[ns])
+    datetime_dtypes = df.dtypes.astype(str).str.startswith("datetime64")
+    assert datetime_dtypes.sum() >= 1
 
     file.unlink()

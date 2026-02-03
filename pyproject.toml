@@ -1,6 +1,6 @@
 [project]
 name = "latent-calendar"
-version = "1.7.0"
+version = "1.8.0"
 description = "Analyzing and modeling weekly calendar distributions using latent components"
 authors = [{ name = "Will Dean", email = "wd60622@gmail.com" }]
 requires-python = ">=3.10,<4.0"
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "pandas>=1.0.0",
@@ -31,7 +32,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pymc = ["pymc>=5.0.0"]
+pymc = [
+    "pymc>=5.27.0; python_version >= '3.11'",
+    "pymc>=5.0.0,<5.27.0; python_version < '3.11'",
+]
 
 [project.urls]
 Homepage = "https://williambdean.github.io/latent-calendar/"
@@ -84,6 +88,7 @@ legacy_tox_ini = """
     isolated_build = true
     env_list =
         # tox and distutils
+        py314
         py313
         py312
         py311

@@ -2,7 +2,7 @@ arviz==0.16.1
 asttokens==2.4.0
 backcall==0.2.0
 cachetools==5.3.1
-certifi==2023.7.22
+certifi==2024.7.4
 charset-normalizer==3.3.0
 cloudpickle==2.2.1
 conjugate-models==0.1.5
