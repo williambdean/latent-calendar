@@ -32,22 +32,21 @@ Examples:
     chart.save('calendar.html')
     ```
 
-    Create faceted chart using Altair's .facet() method:
+    Create faceted chart directly from cal.aggregate_events:
 
     ```python
     from latent_calendar.datasets import load_chicago_bikes
-    from latent_calendar.html import create_calendar_chart, dataframe_to_long_format
+    from latent_calendar.html import create_calendar_chart
 
     # Load data and aggregate by group
     df = load_chicago_bikes()
     df_agg = df.cal.aggregate_events("member_casual", "started_at")
 
-    # Convert to long format
-    df_long = dataframe_to_long_format(df_agg, group_col="rider_type")
+    # Works directly - automatically converts multi-row wide format!
+    chart = create_calendar_chart(df_agg, width=250, height=200, color_scheme='viridis')
 
-    # Create base chart and apply faceting
-    chart = create_calendar_chart(df_long, width=250, height=200, color_scheme='viridis')
-    faceted = chart.facet(column='rider_type:N')
+    # Apply faceting using Altair's .facet() method
+    faceted = chart.facet(column='member_casual:N')
     faceted.save('faceted_calendar.html')
     ```
 
@@ -56,9 +55,9 @@ Examples:
     ```python
     # Create chart with custom properties and faceting in one expression
     faceted = (
-        create_calendar_chart(df_long, color_scheme='viridis')
+        create_calendar_chart(df_agg, color_scheme='viridis')
         .properties(width=250, height=200, title="Bike Share Patterns")
-        .facet(column='rider_type:N', columns=2)
+        .facet(column='member_casual:N', columns=2)
     )
     faceted.save('faceted_calendar.html')
     ```
@@ -198,8 +197,9 @@ def create_calendar_chart(
 
     Args:
         calendar_data: Calendar data in wide or long format:
-                      - Wide format: Series, numpy array, list, or single-row DataFrame
-                        with 168 values (7 days × 24 hours)
+                      - Wide format: Series, numpy array, list, or DataFrame with 168 columns
+                        (7 days × 24 hours). Multi-row DataFrames are automatically converted
+                        to long format with the index used as the group column.
                       - Long format: DataFrame with columns 'day_of_week', 'hour', 'value',
                         and optionally a group column for faceting
         title: Chart title. If None, no title is shown.
@@ -229,24 +229,22 @@ def create_calendar_chart(
         chart.save('calendar.html')
         ```
 
-        Create faceted chart from long format data:
+        Create faceted chart directly from cal.aggregate_events output:
 
         ```python
-        from latent_calendar.html import create_calendar_chart, dataframe_to_long_format
         from latent_calendar.datasets import load_chicago_bikes
+        from latent_calendar.html import create_calendar_chart
 
         # Load and aggregate data by group
         df = load_chicago_bikes()
         df_agg = df.cal.aggregate_events("member_casual", "started_at")
 
-        # Convert to long format
-        df_long = dataframe_to_long_format(df_agg, group_col="rider_type")
-
-        # Create base chart
-        chart = create_calendar_chart(df_long, width=250, height=200)
+        # Works directly - no need for dataframe_to_long_format!
+        chart = create_calendar_chart(df_agg, width=250, height=200)
 
         # Apply faceting using Altair's .facet() method
-        faceted = chart.facet(column='rider_type:N')
+        # The group column name comes from the DataFrame index name
+        faceted = chart.facet(column='member_casual:N')
         faceted.save('faceted_calendar.html')
         ```
 
@@ -254,9 +252,9 @@ def create_calendar_chart(
 
         ```python
         faceted = (
-            create_calendar_chart(df_long, color_scheme='viridis')
+            create_calendar_chart(df_agg, color_scheme='viridis')
             .properties(width=250, height=200, title="Bike Share Patterns")
-            .facet(column='rider_type:N', columns=2)
+            .facet(column='member_casual:N', columns=2)
         )
         ```
 
@@ -288,16 +286,19 @@ def create_calendar_chart(
             # Already long format - use directly
             df_long = calendar_data
         elif calendar_data.shape[1] == 168:
-            # Wide format - must be single row
-            if len(calendar_data) > 1:
-                raise ValueError(
-                    "Wide format DataFrame must have exactly 1 row. "
-                    "For multiple rows, convert to long format using "
-                    "dataframe_to_long_format() first."
+            # Wide format (168 columns)
+            if len(calendar_data) == 1:
+                # Single row - convert to long format without group column
+                df_long = wide_to_long_format(
+                    calendar_data.iloc[0], monday_start=monday_start
                 )
-            df_long = wide_to_long_format(
-                calendar_data.iloc[0], monday_start=monday_start
-            )
+            else:
+                # Multiple rows - automatically convert to long format with group column
+                # Use index name as group column name, or default to "group"
+                group_col = calendar_data.index.name or "group"
+                df_long = dataframe_to_long_format(
+                    calendar_data, group_col=group_col, monday_start=monday_start
+                )
         else:
             raise ValueError(
                 f"DataFrame must have either (day_of_week, hour, value) columns "
