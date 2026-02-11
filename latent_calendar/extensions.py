@@ -1034,13 +1034,9 @@ if HAS_POLARS:
             """
             from latent_calendar.html import create_calendar_chart
 
-            # Convert Polars to pandas and rename 'num_events' to 'value' if needed
-            df_pandas = self._obj.to_pandas()
-            if "num_events" in df_pandas.columns and "value" not in df_pandas.columns:
-                df_pandas = df_pandas.rename(columns={"num_events": "value"})
-
+            # Pass directly to create_calendar_chart - it handles Polars via narwhals
             return create_calendar_chart(
-                df_pandas,
+                self._obj,
                 title=title,
                 width=width,
                 height=height,
