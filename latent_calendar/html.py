@@ -365,7 +365,7 @@ def create_calendar_chart(
 
 
 def dataframe_to_long_format(
-    df_wide,
+    df_wide: pd.DataFrame,
     group_col: str = "group",
     monday_start: bool = True,
 ) -> pd.DataFrame:
@@ -431,6 +431,6 @@ def dataframe_to_long_format(
     df_long = pd.concat(long_dfs, ignore_index=True)
 
     # Reorder columns: group, day_of_week, hour, value
-    df_long = df_long[[group_col, "day_of_week", "hour", "value"]]
+    df_long = df_long.loc[:, [group_col, "day_of_week", "hour", "value"]]
 
     return df_long

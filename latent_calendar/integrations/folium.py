@@ -69,7 +69,7 @@ try:
 except ImportError as e:
     raise ImportError(
         "Folium integration requires folium to be installed. "
-        "Install it with: pip install latent-calendar[folium]"
+        "Install it directly or with: pip install latent-calendar[folium]"
     ) from e
 
 from latent_calendar.html import create_calendar_chart
@@ -130,11 +130,12 @@ def create_popup_html(
         ... )
     """
     chart = create_calendar_chart(
-        calendar_data, title=title, width=width, height=height, **chart_kwargs
+        calendar_data,
+        title=title,
+        width=width,
+        height=height,
+        **chart_kwargs,
     )
-
-    # Generate full HTML document for IFrame embedding
-    # Disable Vega menu actions for cleaner popup
     html = chart.to_html(embed_options={"actions": False})
 
     return html
@@ -225,13 +226,21 @@ def create_calendar_popup(
         ... )
     """
     html = create_popup_html(
-        calendar_data, title=title, width=width, height=height, **chart_kwargs
+        calendar_data,
+        title=title,
+        width=width,
+        height=height,
+        **chart_kwargs,
     )
 
     # Use IFrame to properly embed the full HTML document
     # IFrame height needs to account for chart + title + padding
     iframe_height = height + 80  # Add space for title and margins
-    iframe = folium.IFrame(html, width=max_width, height=iframe_height)
+    iframe = folium.IFrame(
+        html,
+        width=max_width,
+        height=iframe_height,
+    )
 
     return folium.Popup(iframe, max_width=max_width)
 
@@ -285,7 +294,11 @@ def create_tooltip_html(
         chart_kwargs.setdefault("show_values", False)
 
     return create_popup_html(
-        calendar_data, title=title, width=width, height=height, **chart_kwargs
+        calendar_data,
+        title=title,
+        width=width,
+        height=height,
+        **chart_kwargs,
     )
 
 
