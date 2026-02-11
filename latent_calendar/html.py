@@ -79,6 +79,7 @@ Examples:
 
 import pandas as pd
 import numpy as np
+import narwhals as nw
 
 from latent_calendar.plot.iterate import iterate_long_array
 
@@ -200,8 +201,9 @@ def create_calendar_chart(
                       - Wide format: Series, numpy array, list, or DataFrame with 168 columns
                         (7 days × 24 hours). Multi-row DataFrames are automatically converted
                         to long format with the index used as the group column.
-                      - Long format: DataFrame with columns 'day_of_week', 'hour', 'value',
-                        and optionally a group column for faceting
+                      - Long format: DataFrame (pandas or Polars) with columns 'day_of_week',
+                        'hour', 'value' (or 'num_events'), and optionally a group column for faceting.
+                        Polars DataFrames are supported directly via narwhals.
         title: Chart title. If None, no title is shown.
         width: Chart width in pixels. Default is 400.
         height: Chart height in pixels. Default is 300.
@@ -279,35 +281,65 @@ def create_calendar_chart(
         chart  # Display in notebook
         ```
     """
-    # Detect format and convert to long format if needed
-    if isinstance(calendar_data, pd.DataFrame):
-        required_cols = {"day_of_week", "hour", "value"}
-        if required_cols.issubset(calendar_data.columns):
-            # Already long format - use directly
-            df_long = calendar_data
-        elif calendar_data.shape[1] == 168:
-            # Wide format (168 columns)
-            if len(calendar_data) == 1:
-                # Single row - convert to long format without group column
+    # Handle dataframes (pandas or Polars) using narwhals for uniform column detection
+    df_long = None
+    try:
+        df_nw = nw.from_native(calendar_data, eager_only=True)
+
+        # Check if it's already in long format
+        required_cols = {"day_of_week", "hour"}
+        has_value = "value" in df_nw.columns
+        has_num_events = "num_events" in df_nw.columns
+
+        if required_cols.issubset(set(df_nw.columns)) and (has_value or has_num_events):
+            # Already long format - rename num_events to value if needed, keep native type
+            if has_num_events and not has_value:
+                df_long = df_nw.rename({"num_events": "value"}).to_native()
+            else:
+                df_long = df_nw.to_native()
+        elif df_nw.shape[1] == 168:
+            # Wide format (168 columns) - convert via pandas
+            df_pandas = df_nw.to_pandas()
+            if len(df_pandas) == 1:
                 df_long = wide_to_long_format(
-                    calendar_data.iloc[0], monday_start=monday_start
+                    df_pandas.iloc[0], monday_start=monday_start
                 )
             else:
-                # Multiple rows - automatically convert to long format with group column
-                # Use index name as group column name, or default to "group"
-                group_col = calendar_data.index.name or "group"
+                group_col = df_pandas.index.name or "group"
                 df_long = dataframe_to_long_format(
-                    calendar_data, group_col=group_col, monday_start=monday_start
+                    df_pandas, group_col=group_col, monday_start=monday_start
                 )
         else:
             raise ValueError(
-                f"DataFrame must have either (day_of_week, hour, value) columns "
+                f"DataFrame must have either (day_of_week, hour, value/num_events) columns "
                 f"for long format, or 168 columns for wide format. "
-                f"Got {calendar_data.shape[1]} columns."
+                f"Got {df_nw.shape[1]} columns with columns: {df_nw.columns}"
             )
-    else:
-        # Series, array, or list - convert to long format
-        df_long = wide_to_long_format(calendar_data, monday_start=monday_start)
+    except (TypeError, AttributeError):
+        # Not a dataframe that narwhals can handle - try pandas fallback or array/list
+        if isinstance(calendar_data, pd.DataFrame):
+            required_cols = {"day_of_week", "hour", "value"}
+            if required_cols.issubset(calendar_data.columns):
+                df_long = calendar_data
+            elif calendar_data.shape[1] == 168:
+                if len(calendar_data) == 1:
+                    df_long = wide_to_long_format(
+                        calendar_data.iloc[0], monday_start=monday_start
+                    )
+                else:
+                    group_col = calendar_data.index.name or "group"
+                    df_long = dataframe_to_long_format(
+                        calendar_data, group_col=group_col, monday_start=monday_start
+                    )
+            else:
+                raise ValueError(
+                    f"DataFrame must have either (day_of_week, hour, value) columns "
+                    f"for long format, or 168 columns for wide format. "
+                    f"Got {calendar_data.shape[1]} columns."
+                )
+        else:
+            # Series, array, or list - convert to long format
+            df_long = wide_to_long_format(calendar_data, monday_start=monday_start)
 
     # Day labels
     if monday_start:

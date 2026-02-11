@@ -795,6 +795,76 @@ class PandasDataFrameAccessor:
             time_labeler=time_labeler,
         )
 
+    def chart(
+        self,
+        *,
+        title: str | None = None,
+        width: int = 400,
+        height: int = 300,
+        color_scheme: str = "greens",
+        monday_start: bool = True,
+        interactive: bool = True,
+        show_values: bool = True,
+    ):
+        """Create an Altair calendar heatmap chart.
+
+        Convenience wrapper around create_calendar_chart() that works directly
+        on the DataFrame without requiring an import.
+
+        Works with:
+
+        - Multi-row wide format (from .cal.aggregate_events())
+        - Single-row wide format (168 columns)
+        - Long format (day_of_week, hour, value columns)
+
+        Returns Altair Chart that can be:
+
+        - Displayed in notebooks
+        - Saved with .save('file.html')
+        - Faceted with .facet(column='group:N')
+
+        Args:
+            title: Chart title
+            width: Chart width in pixels
+            height: Chart height in pixels
+            color_scheme: Altair color scheme ('greens', 'blues', 'viridis', etc.)
+            monday_start: Start week on Monday (True) or Sunday (False)
+            interactive: Enable tooltips and zoom/pan
+            show_values: Show values in tooltips
+
+        Returns:
+            Altair Chart object
+
+        Examples:
+            Create chart from aggregated data:
+
+            ```python
+            chart = df.cal.aggregate_events("group", "timestamp").cal.chart()
+            chart.save('calendar.html')
+            ```
+
+            Faceted chart in one line:
+
+            ```python
+            (df.cal.aggregate_events("member_casual", "started_at")
+               .cal.chart(color_scheme="greens")
+               .facet(column='member_casual:N'))
+            ```
+
+        """
+        from latent_calendar.html import create_calendar_chart
+
+        return create_calendar_chart(
+            self._obj,
+            title=title,
+            width=width,
+            height=height,
+            color_scheme=color_scheme,
+            monday_start=monday_start,
+            interactive=interactive,
+            show_values=show_values,
+        )
+
 
 if HAS_POLARS:
 
@@ -910,6 +980,71 @@ if HAS_POLARS:
                 as_multiindex=as_multiindex,
                 widen=False,
             ).fit_transform(self._obj)
+
+        def chart(
+            self,
+            *,
+            title: str | None = None,
+            width: int = 400,
+            height: int = 300,
+            color_scheme: str = "greens",
+            monday_start: bool = True,
+            interactive: bool = True,
+            show_values: bool = True,
+        ):
+            """Create an Altair calendar heatmap chart from Polars DataFrame.
+
+            Convenience wrapper that converts Polars DataFrame to pandas
+            and creates an Altair chart.
+
+            Note: Polars .cal.aggregate_events() returns long format with
+            (by_column, day_of_week, hour, num_events) columns which is
+            automatically handled by create_calendar_chart().
+
+            Args:
+                title: Chart title
+                width: Chart width in pixels
+                height: Chart height in pixels
+                color_scheme: Altair color scheme ('greens', 'blues', 'viridis', etc.)
+                monday_start: Start week on Monday (True) or Sunday (False)
+                interactive: Enable tooltips and zoom/pan
+                show_values: Show values in tooltips
+
+            Returns:
+                Altair Chart object
+
+            Examples:
+                Create chart from Polars aggregated data:
+
+                ```python
+                import polars as pl
+
+                chart = df.cal.aggregate_events("group", "timestamp").cal.chart()
+                chart.save('calendar.html')
+                ```
+
+                Faceted chart:
+
+                ```python
+                (df.cal.aggregate_events("member_casual", "started_at")
+                   .cal.chart(color_scheme="greens")
+                   .facet(column='member_casual:N'))
+                ```
+
+            """
+            from latent_calendar.html import create_calendar_chart
+
+            # Pass directly to create_calendar_chart - it handles Polars via narwhals
+            return create_calendar_chart(
+                self._obj,
+                title=title,
+                width=width,
+                height=height,
+                color_scheme=color_scheme,
+                monday_start=monday_start,
+                interactive=interactive,
+                show_values=show_values,
+            )
 
     @pl.api.register_lazyframe_namespace("cal")
     class PolarsLazyFrameAccessor:

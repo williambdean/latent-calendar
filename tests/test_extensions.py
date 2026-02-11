@@ -362,3 +362,53 @@ def test_polars_dataframe_extensions(df_polars) -> None:
 
     df_agg = cal.aggregate_events("id", "datetime")
     assert df_agg.shape == (6, 4)
+
+
+def test_pandas_dataframe_cal_chart(timestamps) -> None:
+    """Test .cal.chart() on pandas DataFrame."""
+    altair = pytest.importorskip("altair")
+
+    # Create a pandas DataFrame with events
+    df = pd.DataFrame(
+        {
+            "group": ["A", "A", "B", "B", "C", "C"],
+            "timestamp": pd.to_datetime(timestamps),
+        }
+    )
+
+    # Aggregate events
+    df_agg = df.cal.aggregate_events("group", "timestamp")
+
+    # Test that .cal.chart() returns an Altair Chart
+    chart = df_agg.cal.chart(color_scheme="greens")
+
+    assert isinstance(chart, altair.Chart)
+    assert hasattr(chart, "save")
+    assert hasattr(chart, "facet")
+
+    # Test with custom parameters
+    chart_custom = df_agg.cal.chart(
+        title="Test Chart", width=300, height=200, color_scheme="blues"
+    )
+    assert isinstance(chart_custom, altair.Chart)
+
+
+def test_polars_dataframe_cal_chart(df_polars) -> None:
+    """Test .cal.chart() on polars DataFrame."""
+    altair = pytest.importorskip("altair")
+
+    # Aggregate events
+    df_agg = df_polars.cal.aggregate_events("id", "datetime")
+
+    # Test that .cal.chart() returns an Altair Chart after converting to pandas
+    chart = df_agg.cal.chart(color_scheme="blues")
+
+    assert isinstance(chart, altair.Chart)
+    assert hasattr(chart, "save")
+    assert hasattr(chart, "facet")
+
+    # Test with custom parameters
+    chart_custom = df_agg.cal.chart(
+        title="Polars Test", width=400, height=250, color_scheme="viridis"
+    )
+    assert isinstance(chart_custom, altair.Chart)
