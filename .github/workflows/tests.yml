@@ -1,10 +1,32 @@
 name: Tests
 
 on:
-  - push
+  push:
+    paths:
+      - "latent_calendar/**"
+      - "pyproject.toml"
+      - "tests/**"
+  pull_request:  # no path filters — filtering happens in the changes job
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - "latent_calendar/**"
+              - "pyproject.toml"
+              - "tests/**"
+
   test:
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -23,3 +45,19 @@ jobs:
           pip install tox tox-gh-actions
       - name: Test with tox
         run: tox
+
+  tests-result:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [test]
+    steps:
+      - name: Tests passed or skipped
+        run: |
+          result="${{ needs.test.result }}"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            echo "Tests passed or were skipped"
+            exit 0
+          else
+            echo "Tests failed: $result"
+            exit 1
+          fi
