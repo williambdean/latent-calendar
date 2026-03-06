@@ -36,6 +36,12 @@ pymc = [
     "pymc>=5.27.0; python_version >= '3.11'",
     "pymc>=5.0.0,<5.27.0; python_version < '3.11'",
 ]
+html = [
+    "altair>=5.0.0",
+]
+folium = [
+    "folium>=0.14.0",
+]
 
 [project.urls]
 Homepage = "https://williambdean.github.io/latent-calendar/"
@@ -57,6 +63,8 @@ dev = [
     "jupyter>=1.0.0,<2",
     "polars>=1.30.0",
     "pyarrow>=20.0.0",
+    "altair>=5.0.0",
+    "folium>=0.14.0",
 ]
 
 [tool.uv]
@@ -101,6 +109,8 @@ legacy_tox_ini = """
         pytest-cov
         pymc
         polars
+        altair
+        folium
     commands = pytest
 """
 

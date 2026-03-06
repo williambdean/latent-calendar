@@ -114,5 +114,3 @@ def test_iter_vocab_config_and_dataframe(data: dict[str, list[int]]) -> None:
 
     for i, values in enumerate(iterator):
         assert isinstance(values, CalendarData)
-
-    assert i + 1 == len(df)

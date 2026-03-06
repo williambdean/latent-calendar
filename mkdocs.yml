@@ -48,6 +48,9 @@ nav:
     - modules/segments.md
     - modules/const.md
     - modules/vocab.md
+    - modules/html.md
+    - Integrations:
+      - modules/integrations/folium.md
     - Plot:
       - modules/plot/core.md
       - modules/plot/elements.md
@@ -60,6 +63,7 @@ nav:
     - examples/cal-attribute.md
     - examples/create-segments.md
     - examples/generation-process.md
+    - examples/folium-integration.md
     - Model:
       - examples/model/sklearn-compat.md
     - Plotting:
