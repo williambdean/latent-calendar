@@ -111,6 +111,54 @@ sampler = model.create_sampler(random_state=0)
 df_weights, df_events = sampler.sample(n_samples=[20, 30, 15])
 ```
 
+## Sampling from Multiple Segments
+
+Use `DummyModel.from_segments` to build a multi-component model where each segment
+is one component. The sampler then draws a mixture over those segments per user —
+`df_weights` tells you how much each user's events came from each segment:
+
+```python
+from latent_calendar import DummyModel
+from latent_calendar.segments import create_box_segment, stack_segments
+
+mornings = create_box_segment(
+    day_start=0, day_end=5, hour_start=7, hour_end=10, name="Mornings"
+)
+evenings = create_box_segment(
+    day_start=0, day_end=5, hour_start=18, hour_end=22, name="Evenings"
+)
+df_segments = stack_segments([mornings, evenings])
+
+model = DummyModel.from_segments(df_segments)
+sampler = model.create_sampler(random_state=0)
+
+df_weights, df_events = sampler.sample(n_samples=[10, 20, 15])
+# df_weights: (3, 2) — each user's mixture over Mornings and Evenings
+# df_events:  (3, 168) — event counts per time slot
+```
+
+Pass `weights` to make some segments more likely than others in the population prior:
+
+```python
+# Mornings 3x more likely than evenings in the population
+model = DummyModel.from_segments(df_segments, weights=[3, 1])
+```
+
+## Controlling Variance Across Users
+
+By default all users draw their mixture weights from the same population-level
+Dirichlet concentration. Setting `concentration_scale > 1.0` adds per-user
+randomness by Gamma-perturbing the concentration before each draw — producing more
+diverse users:
+
+```python
+# Low variance — users closely reflect the population prior
+sampler = model.create_sampler(random_state=0, concentration_scale=1.0)
+
+# High variance — users are more individually distinctive
+sampler = model.create_sampler(random_state=0, concentration_scale=5.0)
+```
+
 The resulting `df_events` will be concentrated in the morning slots, reflecting the
 segment — without needing any real data to fit on. Multiple segments can be combined
 by adding their Series together before passing to `from_prior`:

@@ -71,11 +71,19 @@ class LatentCalendar(BaseLDA):
         """Population frequency of each component."""
         return self.components_.sum(axis=1) / self.components_.sum()
 
-    def create_sampler(self, random_state: int | None = None):
+    def create_sampler(
+        self,
+        random_state: int | None = None,
+        concentration_scale: float = 1.0,
+    ):
         """Create a sampler for generating synthetic calendar data.
 
         Args:
             random_state: seed for reproducibility
+            concentration_scale: scale for Gamma-perturbing each user's Dirichlet
+                concentration before sampling mixture weights. 1.0 (default) means
+                no perturbation — each user draws from the fixed population prior.
+                Values > 1.0 increase variance across users' mixture weights.
 
         Returns:
             LatentCalendarSampler bound to this fitted model
@@ -88,7 +96,9 @@ class LatentCalendar(BaseLDA):
         """
         from latent_calendar.generate import LatentCalendarSampler
 
-        return LatentCalendarSampler(self, random_state=random_state)
+        return LatentCalendarSampler(
+            self, random_state=random_state, concentration_scale=concentration_scale
+        )
 
 
 class DummyModel(LatentCalendar):
@@ -151,6 +161,7 @@ class DummyModel(LatentCalendar):
             ```
 
         """
+        import pandas as pd
 
         if isinstance(prior, pd.Series):
             prior = prior.to_numpy()
@@ -158,6 +169,66 @@ class DummyModel(LatentCalendar):
         model = cls()
         model.components_ = prior[np.newaxis, :]
         model.n_components = 1
+
+        return model
+
+    @classmethod
+    def from_segments(
+        cls,
+        df_segments: "pd.DataFrame",
+        weights: "np.ndarray | list[float] | None" = None,
+    ) -> "DummyModel":
+        """Return a multi-component model where each segment is one component.
+
+        Each row of `df_segments` becomes one component in the model. The
+        population-level mixture over components is derived from
+        `component_distribution_` — by default this weights components
+        proportionally to the number of active slots in each segment. Pass
+        explicit `weights` to override this.
+
+        Args:
+            df_segments: segments DataFrame in wide format, shape
+                (n_segments, n_time_slots), e.g. from `stack_segments`.
+            weights: optional 1-D array of length n_segments. Scales each
+                component's contribution to the population prior. If None,
+                weighting is proportional to active slot count per segment.
+
+        Returns:
+            DummyModel with one component per segment.
+
+        Example:
+            ```python
+            from latent_calendar import DummyModel
+            from latent_calendar.segments import create_box_segment, stack_segments
+
+            mornings = create_box_segment(
+                day_start=0, day_end=5, hour_start=7, hour_end=10, name="Mornings"
+            )
+            evenings = create_box_segment(
+                day_start=0, day_end=5, hour_start=18, hour_end=22, name="Evenings"
+            )
+            df_segments = stack_segments([mornings, evenings])
+
+            # Equal implicit weight (proportional to active slots)
+            model = DummyModel.from_segments(df_segments)
+
+            # Mornings 3x more likely than evenings
+            model = DummyModel.from_segments(df_segments, weights=[3, 1])
+
+            sampler = model.create_sampler(random_state=0)
+            df_weights, df_events = sampler.sample(n_samples=[10, 20, 15])
+            ```
+
+        """
+        components = df_segments.to_numpy().astype(float)
+
+        if weights is not None:
+            weights = np.asarray(weights, dtype=float)
+            components = components * weights[:, np.newaxis]
+
+        model = cls()
+        model.components_ = components
+        model.n_components = len(df_segments)
 
         return model
 

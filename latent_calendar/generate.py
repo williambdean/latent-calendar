@@ -39,14 +39,16 @@ def _sample_calendar(
     normalized_components: np.ndarray,
     n_samples: np.ndarray,
     rng: np.random.Generator,
+    concentration_scale: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Vectorized sampling from an LDA-style generative model.
 
     For each user i:
-        1. Draw mixture weights from Dirichlet(component_weights[i])
-        2. Draw component_indices for all n_samples[i] events at once
-        3. Gather component distributions and draw time slots via cumulative probs
-        4. Aggregate time slot draws into a count vector
+        1. Optionally perturb concentration via Gamma draws (if concentration_scale != 1)
+        2. Draw mixture weights from Dirichlet(component_weights[i])
+        3. Draw component indices for all n_samples[i] events at once
+        4. Gather component distributions and draw time slots via cumulative probs
+        5. Aggregate time slot draws into a count vector
 
     Args:
         component_weights: Dirichlet concentration per user (n_users, n_components)
@@ -54,6 +56,10 @@ def _sample_calendar(
             (n_components, n_time_slots)
         n_samples: number of events per user (n_users,)
         rng: numpy random Generator
+        concentration_scale: scale parameter for Gamma-perturbing the concentration
+            before each user's Dirichlet draw. 1.0 (default) means no perturbation —
+            each user draws directly from the fixed concentration. Values > 1.0
+            increase variance across users' mixture weights.
 
     Returns:
         Tuple of:
@@ -64,21 +70,20 @@ def _sample_calendar(
     n_users, n_components = component_weights.shape
     n_time_slots = normalized_components.shape[1]
 
-    # Draw mixture weights for all users: (n_users, n_components)
-    mixture_weights = np.vstack(
-        [rng.dirichlet(component_weights[i]) for i in range(n_users)]
-    )
+    mixture_weights = np.zeros((n_users, n_components))
+    for i in range(n_users):
+        alpha = component_weights[i]
+        if concentration_scale != 1.0:
+            alpha = rng.gamma(shape=alpha, scale=concentration_scale)
+        mixture_weights[i] = rng.dirichlet(alpha)
 
     event_counts = np.zeros((n_users, n_time_slots), dtype=int)
 
     for i, n in enumerate(n_samples):
         if n == 0:
             continue
-        # Draw component indices for all events of user i at once
         component_indices = rng.choice(n_components, size=int(n), p=mixture_weights[i])
-        # Gather component distributions for all drawn components: (n, n_time_slots)
         probs = normalized_components[component_indices]
-        # Draw one time slot per event via inverse CDF
         cumprobs = probs.cumsum(axis=1)
         u = rng.random(size=(int(n), 1))
         time_slots = (u > cumprobs).sum(axis=1)
@@ -93,6 +98,9 @@ class LatentCalendarSampler:
     Args:
         model: a fitted LatentCalendar model
         random_state: seed for reproducibility
+        concentration_scale: scale for Gamma-perturbing each user's Dirichlet
+            concentration before sampling mixture weights. 1.0 (default) means
+            no perturbation. Values > 1.0 increase variance across users.
 
     Example:
         >>> model = LatentCalendar(n_components=5).fit(X)
@@ -101,9 +109,15 @@ class LatentCalendarSampler:
 
     """
 
-    def __init__(self, model, random_state: int | None = None) -> None:
+    def __init__(
+        self,
+        model,
+        random_state: int | None = None,
+        concentration_scale: float = 1.0,
+    ) -> None:
         self.model = model
         self.random_state = random_state
+        self.concentration_scale = concentration_scale
         self._rng = np.random.default_rng(random_state)
 
     def sample(
@@ -142,6 +156,7 @@ class LatentCalendarSampler:
             normalized_components=self.model.normalized_components_,
             n_samples=n_samples,
             rng=self._rng,
+            concentration_scale=self.concentration_scale,
         )
 
         df_weights = pd.DataFrame(
@@ -176,6 +191,7 @@ def sample_from_latent_calendar(
     model,
     n_samples: Union[int, list[int], np.ndarray],
     random_state: int | None = None,
+    concentration_scale: float = 1.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Sample synthetic calendar data from a fitted LatentCalendar model.
 
@@ -186,6 +202,9 @@ def sample_from_latent_calendar(
         n_samples: number of events per user. A single int produces one user
             with that many events. A list/array produces one user per element.
         random_state: seed for reproducibility
+        concentration_scale: scale for Gamma-perturbing each user's Dirichlet
+            concentration before sampling mixture weights. 1.0 (default) means
+            no perturbation. Values > 1.0 increase variance across users.
 
     Returns:
         Tuple of:
@@ -193,4 +212,6 @@ def sample_from_latent_calendar(
             - df_events: event count DataFrame (n_users, n_time_slots)
 
     """
-    return LatentCalendarSampler(model, random_state=random_state).sample(n_samples)
+    return LatentCalendarSampler(
+        model, random_state=random_state, concentration_scale=concentration_scale
+    ).sample(n_samples)
