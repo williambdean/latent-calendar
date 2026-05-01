@@ -161,8 +161,6 @@ class DummyModel(LatentCalendar):
             ```
 
         """
-        import pandas as pd
-
         if isinstance(prior, pd.Series):
             prior = prior.to_numpy()
 
