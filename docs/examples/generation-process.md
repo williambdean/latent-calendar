@@ -70,10 +70,10 @@ df_weights, df_events = sample_from_latent_calendar(
 )
 ```
 
-## Summarising by Segment
+## Summarizing by Segment
 
 The returned event count DataFrame is in the same wide format as training data,
-so it works directly with the segments API to summarise activity by time window:
+so it works directly with the segments API to summarize activity by time window:
 
 ```python
 from latent_calendar.segments import create_box_segment, stack_segments
@@ -171,7 +171,7 @@ evenings = create_box_segment(
 model = DummyModel.from_prior(mornings + evenings)
 ```
 
-## Visualising the Results
+## Visualizing the Results
 
 The event count DataFrame can be passed directly to the `.cal` accessor for plotting:
 
