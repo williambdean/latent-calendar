@@ -70,6 +70,25 @@ class LatentCalendar(BaseLDA):
         """Population frequency of each component."""
         return self.components_.sum(axis=1) / self.components_.sum()
 
+    def create_sampler(self, random_state: int | None = None):
+        """Create a sampler for generating synthetic calendar data.
+
+        Args:
+            random_state: seed for reproducibility
+
+        Returns:
+            LatentCalendarSampler bound to this fitted model
+
+        Example:
+            >>> model = LatentCalendar(n_components=5).fit(X)
+            >>> sampler = model.create_sampler(random_state=42)
+            >>> df_weights, df_events = sampler.sample(n_samples=[10, 5, 20])
+
+        """
+        from latent_calendar.generate import LatentCalendarSampler
+
+        return LatentCalendarSampler(self, random_state=random_state)
+
 
 class DummyModel(LatentCalendar):
     """Return even probability of a latent.
