@@ -127,21 +127,48 @@ mornings = create_box_segment(
 evenings = create_box_segment(
     day_start=0, day_end=5, hour_start=18, hour_end=22, name="Evenings"
 )
-df_segments = stack_segments([mornings, evenings])
-
-model = DummyModel.from_segments(df_segments)
-sampler = model.create_sampler(random_state=0)
-
-df_weights, df_events = sampler.sample(n_samples=[10, 20, 15])
-# df_weights: (3, 2) — each user's mixture over Mornings and Evenings
-# df_events:  (3, 168) — event counts per time slot
+afternoons = create_box_segment(
+    day_start=0, day_end=7, hour_start=12, hour_end=17, name="Afternoons"
+)
+weekends = create_box_segment(
+    day_start=5, day_end=7, hour_start=12, hour_end=16, name="Weekends"
+)
+df_segments = stack_segments([mornings, afternoons, evenings, weekends])
+df_segments.cal.plot_by_row(max_cols=2)
 ```
+
+![Defined Segments](./../images/generation-segments.png)
+
+Each row is one component. Build the model and inspect its components:
+
+```python
+model = DummyModel.from_segments(df_segments)
+```
+
+```python
+from latent_calendar.plot import plot_model_components
+
+plot_model_components(model, max_cols=2)
+```
+
+![Model Components](./../images/generation-components.png)
+
+```python
+sampler = model.create_sampler(random_state=0)
+df_weights, df_events = sampler.sample(n_samples=[10, 20, 15, 25, 30, 18])
+# df_weights: (6, 4) — each user's mixture over Mornings, Afternoons, Evenings, Weekends
+# df_events:  (6, 168) — event counts per time slot
+
+df_events.cal.plot_by_row(max_cols=2)
+```
+
+![Sampled Events](./../images/generation-sampled-events.png)
 
 Pass `weights` to make some segments more likely than others in the population prior:
 
 ```python
-# Mornings 3x more likely than evenings in the population
-model = DummyModel.from_segments(df_segments, weights=[3, 1])
+# Mornings 3x more likely, Afternoons 2x, Evenings 1x, Weekends 2x
+model = DummyModel.from_segments(df_segments, weights=[3, 2, 1, 2])
 ```
 
 ## Controlling Variance Across Users
@@ -159,22 +186,4 @@ sampler = model.create_sampler(random_state=0, concentration_scale=1.0)
 sampler = model.create_sampler(random_state=0, concentration_scale=5.0)
 ```
 
-The resulting `df_events` will be concentrated in the morning slots, reflecting the
-segment — without needing any real data to fit on. Multiple segments can be combined
-by adding their Series together before passing to `from_prior`:
-
-```python
-evenings = create_box_segment(
-    day_start=0, day_end=5, hour_start=18, hour_end=22, name="Weekday evenings"
-)
-
-model = DummyModel.from_prior(mornings + evenings)
-```
-
-## Visualizing the Results
-
-The event count DataFrame can be passed directly to the `.cal` accessor for plotting:
-
-```python
-df_events.cal.plot_by_row()
-```
+![Concentration Scale Comparison](./../images/generation-concentration-scale.png)
