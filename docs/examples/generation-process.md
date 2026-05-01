@@ -70,10 +70,57 @@ df_weights, df_events = sample_from_latent_calendar(
 )
 ```
 
+## Summarising by Segment
+
+The returned event count DataFrame is in the same wide format as training data,
+so it works directly with the segments API to summarise activity by time window:
+
+```python
+from latent_calendar.segments import create_box_segment, stack_segments
+
+mornings = create_box_segment(
+    day_start=0, day_end=7, hour_start=6, hour_end=11, name="Mornings"
+)
+evenings = create_box_segment(
+    day_start=0, day_end=7, hour_start=17, hour_end=22, name="Evenings"
+)
+df_segments = stack_segments([mornings, evenings])
+
+# Count how many events each user had in each segment
+df_events.cal.sum_over_segments(df_segments)
+```
+
+## Sampling Without Real Data (Mock Model)
+
+You can generate synthetic data without fitting on a real dataset by constructing
+a model from a hand-crafted prior. `DummyModel.from_prior` accepts a 1-D array of
+component weights — here we build a prior that concentrates on weekday mornings:
+
+```python
+import numpy as np
+from latent_calendar import DummyModel
+from latent_calendar.const import FULL_VOCAB
+from latent_calendar.segments import create_box_segment, stack_segments
+
+# Start from a uniform prior and upweight weekday mornings (Mon–Fri, 7–10)
+prior = np.ones(len(FULL_VOCAB))
+mornings = create_box_segment(
+    day_start=0, day_end=5, hour_start=7, hour_end=10, name="Weekday mornings"
+)
+prior += mornings.values * 4  # 5x weight on morning slots
+
+model = DummyModel.from_prior(prior)
+sampler = model.create_sampler(random_state=0)
+
+df_weights, df_events = sampler.sample(n_samples=[20, 30, 15])
+```
+
+The resulting `df_events` will be concentrated in the morning slots, reflecting the
+prior — without needing any real data to fit on.
+
 ## Visualising the Results
 
-The returned event count DataFrame is in the same wide format as the training data,
-so it can be passed directly to the `.cal` accessor for plotting:
+The event count DataFrame can be passed directly to the `.cal` accessor for plotting:
 
 ```python
 df_events.cal.plot_by_row()
