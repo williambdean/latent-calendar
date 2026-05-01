@@ -16,6 +16,7 @@ X_pred = model.predict(X)
 from packaging.version import Version
 
 import numpy as np
+import pandas as pd
 
 from sklearn import __version__ as sklearn_version
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -122,8 +123,38 @@ class DummyModel(LatentCalendar):
         return model
 
     @classmethod
-    def from_prior(cls, prior: np.ndarray) -> "DummyModel":
-        """Return a dummy model from a prior."""
+    def from_prior(cls, prior: "np.ndarray | pd.Series") -> "DummyModel":
+        """Return a dummy model from a prior.
+
+        Args:
+            prior: prior probability weights over time slots. Can be a numpy
+                array of shape (n_time_slots,) or a segment Series (e.g. from
+                `create_box_segment`) with a FULL_VOCAB-compatible index.
+
+        Returns:
+            DummyModel with a single component defined by the prior.
+
+        Example:
+            Build a model that concentrates on weekday mornings:
+
+            ```python
+            from latent_calendar import DummyModel
+            from latent_calendar.segments import create_box_segment
+
+            mornings = create_box_segment(
+                day_start=0, day_end=5, hour_start=7, hour_end=10,
+                name="Weekday mornings",
+            )
+            model = DummyModel.from_prior(mornings)
+            sampler = model.create_sampler(random_state=0)
+            df_weights, df_events = sampler.sample(n_samples=[20, 30, 15])
+            ```
+
+        """
+
+        if isinstance(prior, pd.Series):
+            prior = prior.to_numpy()
+
         model = cls()
         model.components_ = prior[np.newaxis, :]
         model.n_components = 1

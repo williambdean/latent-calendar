@@ -93,30 +93,35 @@ df_events.cal.sum_over_segments(df_segments)
 ## Sampling Without Real Data (Mock Model)
 
 You can generate synthetic data without fitting on a real dataset by constructing
-a model from a hand-crafted prior. `DummyModel.from_prior` accepts a 1-D array of
-component weights — here we build a prior that concentrates on weekday mornings:
+a model from a hand-crafted prior. `DummyModel.from_prior` accepts either a numpy
+array or a segment Series directly — so you can describe a pattern using the segments
+API and feed it straight into the model:
 
 ```python
-import numpy as np
 from latent_calendar import DummyModel
-from latent_calendar.const import FULL_VOCAB
-from latent_calendar.segments import create_box_segment, stack_segments
+from latent_calendar.segments import create_box_segment
 
-# Start from a uniform prior and upweight weekday mornings (Mon–Fri, 7–10)
-prior = np.ones(len(FULL_VOCAB))
 mornings = create_box_segment(
     day_start=0, day_end=5, hour_start=7, hour_end=10, name="Weekday mornings"
 )
-prior += mornings.values * 4  # 5x weight on morning slots
 
-model = DummyModel.from_prior(prior)
+model = DummyModel.from_prior(mornings)
 sampler = model.create_sampler(random_state=0)
 
 df_weights, df_events = sampler.sample(n_samples=[20, 30, 15])
 ```
 
 The resulting `df_events` will be concentrated in the morning slots, reflecting the
-prior — without needing any real data to fit on.
+segment — without needing any real data to fit on. Multiple segments can be combined
+by adding their Series together before passing to `from_prior`:
+
+```python
+evenings = create_box_segment(
+    day_start=0, day_end=5, hour_start=18, hour_end=22, name="Weekday evenings"
+)
+
+model = DummyModel.from_prior(mornings + evenings)
+```
 
 ## Visualising the Results
 
