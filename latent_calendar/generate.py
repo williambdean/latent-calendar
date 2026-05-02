@@ -223,8 +223,27 @@ def sample_from_latent_calendar(
     ).sample(n_samples)
 
 
-def sample_from_lda(*args, **kwargs):
-    """Removed. Use :func:`sample_from_latent_calendar` instead."""
-    raise ImportError(
+def sample_from_lda(
+    components_prior,
+    components_time_slots_prior,
+    n_samples,
+    random_state: int | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Deprecated. Use :func:`sample_from_latent_calendar` instead.
+
+    .. deprecated::
+        ``sample_from_lda`` has been removed. Build a :class:`~latent_calendar.model.latent_calendar.DummyModel`
+        from a prior and use :func:`sample_from_latent_calendar` instead.
+
+    """
+    import warnings
+
+    warnings.warn(
+        "sample_from_lda is deprecated and will be removed in a future release. "
+        "Use sample_from_latent_calendar instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    raise NotImplementedError(
         "sample_from_lda has been removed. Use sample_from_latent_calendar instead."
     )
