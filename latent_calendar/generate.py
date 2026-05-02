@@ -41,7 +41,12 @@ def _sample_calendar(
     rng: np.random.Generator,
     concentration_scale: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Vectorized sampling from an LDA-style generative model.
+    """Sample from an LDA-style generative model.
+
+    Iterates over users in pure Python; the hot path per user (Dirichlet draw,
+    component selection, inverse-CDF time slot sampling, and histogram
+    accumulation) is handled by numpy and runs in C. Performance is acceptable
+    for hundreds of users; for very large populations consider batching.
 
     For each user i:
         1. Optionally perturb concentration via Gamma draws (if concentration_scale != 1)
@@ -75,6 +80,7 @@ def _sample_calendar(
         alpha = component_weights[i]
         if concentration_scale != 1.0:
             alpha = rng.gamma(shape=alpha, scale=concentration_scale)
+            alpha = np.clip(alpha, a_min=1e-8, a_max=None)
         mixture_weights[i] = rng.dirichlet(alpha)
 
     event_counts = np.zeros((n_users, n_time_slots), dtype=int)
@@ -215,3 +221,10 @@ def sample_from_latent_calendar(
     return LatentCalendarSampler(
         model, random_state=random_state, concentration_scale=concentration_scale
     ).sample(n_samples)
+
+
+def sample_from_lda(*args, **kwargs):
+    """Removed. Use :func:`sample_from_latent_calendar` instead."""
+    raise ImportError(
+        "sample_from_lda has been removed. Use sample_from_latent_calendar instead."
+    )

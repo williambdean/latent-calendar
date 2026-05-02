@@ -133,7 +133,7 @@ class DummyModel(LatentCalendar):
         return model
 
     @classmethod
-    def from_prior(cls, prior: "np.ndarray | pd.Series") -> "DummyModel":
+    def from_prior(cls, prior: np.ndarray | pd.Series) -> "DummyModel":
         """Return a dummy model from a prior.
 
         Args:
