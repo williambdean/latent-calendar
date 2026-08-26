@@ -1,8 +1,8 @@
 """Operations and relationship with the "vocab" of the default time slots."""
 
-from dataclasses import dataclass
 import calendar
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import pandas as pd
 

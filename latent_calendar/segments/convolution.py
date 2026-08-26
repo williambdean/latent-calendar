@@ -2,8 +2,8 @@
 
 from typing import Literal
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def _reverse_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -106,7 +106,7 @@ def sum_over_vocab(
 
     """
     if not isinstance(df.columns, pd.MultiIndex):
-        raise ValueError("The columns must be a MultiIndex of day_of_week and hour.")
+        raise TypeError("The columns must be a MultiIndex of day_of_week and hour.")
 
     level = 1 if aggregation == "hour" else 0
     return df.T.groupby(level=level).sum().T

@@ -1,12 +1,11 @@
-import pytest
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
 from latent_calendar.generate import wide_format_dataframe
 from latent_calendar.segments.convolution import (
-    sum_next_hours,
     sum_array_over_segments,
+    sum_next_hours,
     sum_over_vocab,
 )
 

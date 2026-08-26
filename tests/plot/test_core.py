@@ -1,16 +1,13 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import pytest
 
-import pandas as pd
-import numpy as np
-
-import matplotlib.pyplot as plt
-
 from latent_calendar.generate import wide_format_dataframe
-
+from latent_calendar.model.latent_calendar import LatentCalendar
 from latent_calendar.plot.core.calendar import plot_calendar
 from latent_calendar.plot.core.model import plot_model_components
 from latent_calendar.plot.iterate import iterate_matrix
-from latent_calendar.model.latent_calendar import LatentCalendar
 
 
 @pytest.fixture

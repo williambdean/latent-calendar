@@ -77,9 +77,9 @@ Examples:
     ```
 """
 
-import pandas as pd
-import numpy as np
 import narwhals as nw
+import numpy as np
+import pandas as pd
 
 from latent_calendar.plot.iterate import iterate_long_array
 

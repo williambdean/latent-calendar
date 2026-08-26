@@ -46,9 +46,10 @@ Examples:
 
 """
 
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from itertools import repeat
-from typing import Any, Generator, Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd

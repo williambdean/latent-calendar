@@ -29,16 +29,16 @@ Examples:
 
 import itertools
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from latent_calendar.plot.elements import create_default_days
 from latent_calendar.const import (
-    HOURS_IN_DAY,
     DAYS_IN_WEEK,
     FULL_VOCAB,
+    HOURS_IN_DAY,
     format_dow_hour,
 )
+from latent_calendar.plot.elements import create_default_days
 from latent_calendar.vocab import DOWHour
 
 

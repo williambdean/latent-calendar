@@ -1,16 +1,14 @@
 """Plots including a model."""
 
-from typing import Iterable
+from collections.abc import Iterable
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
 from latent_calendar.model.latent_calendar import LatentCalendar
-
+from latent_calendar.plot.colors import create_default_cmap, settle_data_and_cmap
 from latent_calendar.plot.core.calendar import plot_calendar
-from latent_calendar.plot.colors import settle_data_and_cmap, create_default_cmap
 from latent_calendar.plot.elements import DayLabeler, TimeLabeler
 from latent_calendar.plot.grid_settings import default_axes_and_grid_axes
 from latent_calendar.plot.iterate import iterate_long_array
@@ -20,10 +18,10 @@ def plot_profile(
     array: np.ndarray,
     model: LatentCalendar,
     divergent: bool = True,
-    axes: Iterable[plt.Axes] = None,
+    axes: Iterable[plt.Axes] | None = None,
     include_components: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> np.ndarray:
     """Create a profile plot with 3 different plots.
 
@@ -42,6 +40,11 @@ def plot_profile(
         None
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     ncols = 3 if include_components else 2
     if axes is None:
         _, axes = plt.subplots(nrows=1, ncols=ncols)
@@ -105,9 +108,14 @@ def plot_profile_by_row(
     index_func,
     divergent: bool = True,
     include_components: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> np.ndarray:
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     nrows = len(df)
 
     ncols = 3 if include_components else 2
@@ -142,9 +150,9 @@ def plot_model_predictions(
     X_holdout: np.ndarray,
     model: LatentCalendar,
     divergent: bool = True,
-    axes: Iterable[plt.Axes] = None,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    axes: Iterable[plt.Axes] | None = None,
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> Iterable[plt.Axes]:
     """Plot the model predictions compared to the test data.
 
@@ -159,6 +167,11 @@ def plot_model_predictions(
         The axes used for plotting
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     X_to_predict = X_to_predict[np.newaxis, :]
     X_holdout = X_holdout[np.newaxis, :]
 
@@ -203,9 +216,14 @@ def plot_model_predictions_by_row(
     model: LatentCalendar,
     index_func=lambda idx: idx,
     divergent: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> np.ndarray:
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     nrows = len(df)
 
     df_holdout = df_holdout.loc[df.index]
@@ -240,10 +258,15 @@ def plot_raw_data(
     array: np.ndarray,
     ax: plt.Axes,
     display_y_axis: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> plt.Axes:
     """First plot of raw data."""
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     try:
         max_value = np.quantile(array[array > 0], 0.95)
     except IndexError:
@@ -270,10 +293,15 @@ def plot_distribution(
     ax: plt.Axes,
     display_y_axis: bool = True,
     divergent: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> plt.Axes:
     """Second plot of the profile calendar probability distribution."""
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     time_labeler.display = display_y_axis
 
     data, cmap = settle_data_and_cmap(data=X_probs, divergent=divergent)
@@ -331,8 +359,8 @@ def plot_model_components(
     max_cols: int = 5,
     divergent: bool = True,
     components: Iterable[int] | None = None,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
 ) -> None:
     """Helper function to create plot of all the components of the LatentCalendar instance.
 
@@ -348,10 +376,15 @@ def plot_model_components(
         None
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     if components is None:
         components = list(range(model.n_components))
 
-    if any([component > model.n_components - 1 for component in components]):
+    if any(component > model.n_components - 1 for component in components):
         msg = f"One of the listed components is greater than the total number {model.n_components}"
         raise ValueError(msg)
 

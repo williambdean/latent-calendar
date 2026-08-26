@@ -1,7 +1,7 @@
 import pytest
 
 from latent_calendar.const import DAYS_IN_WEEK
-from latent_calendar.plot.elements import CalendarEvent, TimeLabeler, DayLabeler
+from latent_calendar.plot.elements import CalendarEvent, DayLabeler, TimeLabeler
 
 
 @pytest.mark.parametrize(

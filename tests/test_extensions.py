@@ -1,18 +1,16 @@
-import pytest
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import polars as pl
 import polars.testing
-import pandas as pd
-import numpy as np
-
-import matplotlib.pyplot as plt
+import pytest
 
 import latent_calendar  # noqa
 from latent_calendar.const import (
-    TIME_SLOTS,
-    FULL_VOCAB,
     DAYS_IN_WEEK,
+    FULL_VOCAB,
     HOURS_IN_DAY,
+    TIME_SLOTS,
     create_full_vocab,
 )
 

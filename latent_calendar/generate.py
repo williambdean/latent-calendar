@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
 import pandas as pd
 
@@ -128,7 +126,7 @@ class LatentCalendarSampler:
 
     def sample(
         self,
-        n_samples: Union[int, list[int], np.ndarray],
+        n_samples: int | list[int] | np.ndarray,
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Sample synthetic calendar events from the fitted model.
 
@@ -195,7 +193,7 @@ class LatentCalendarSampler:
 
 def sample_from_latent_calendar(
     model,
-    n_samples: Union[int, list[int], np.ndarray],
+    n_samples: int | list[int] | np.ndarray,
     random_state: int | None = None,
     concentration_scale: float = 1.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:

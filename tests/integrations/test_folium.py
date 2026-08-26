@@ -1,19 +1,18 @@
 """Tests for latent_calendar.integrations.folium module."""
 
-import pytest
 import numpy as np
 import pandas as pd
-
+import pytest
 
 # Skip all tests if required packages are not installed
 pytest.importorskip("altair")
 folium = pytest.importorskip("folium")
 
-from latent_calendar.integrations.folium import (  # noqa: E402
-    create_popup_html,
+from latent_calendar.integrations.folium import (
     create_calendar_popup,
-    create_tooltip_html,
     create_calendar_tooltip,
+    create_popup_html,
+    create_tooltip_html,
 )
 
 

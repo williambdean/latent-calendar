@@ -1,16 +1,15 @@
+import numpy as np
+import pandas as pd
 import pytest
 
-import pandas as pd
-import numpy as np
-
-from latent_calendar.const import TIME_SLOTS, DAYS_IN_WEEK, FULL_VOCAB
+from latent_calendar.const import DAYS_IN_WEEK, FULL_VOCAB, TIME_SLOTS
 from latent_calendar.segments.hand_picked import (
     create_blank_segment_series,
-    get_vocab_for_range,
-    create_empty_template,
-    create_hourly_segment,
     create_dow_segments,
+    create_empty_template,
     create_every_hour_segments,
+    create_hourly_segment,
+    get_vocab_for_range,
     stack_segments,
 )
 from latent_calendar.vocab import DOWHour

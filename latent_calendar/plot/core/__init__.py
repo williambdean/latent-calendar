@@ -6,7 +6,7 @@ from latent_calendar.plot.core.calendar import (  # noqa
     plot_series_as_calendar,
     plot_dataframe_grid_across_column,
 )
-from latent_calendar.plot.core.model import (  # noqa
+from latent_calendar.plot.core.model import (
     plot_model_components,
     plot_profile,
     plot_profile_by_row,

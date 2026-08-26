@@ -10,7 +10,6 @@ from latent_calendar.generate import (
 from latent_calendar.model.latent_calendar import DummyModel, LatentCalendar
 from latent_calendar.segments import create_box_segment, stack_segments
 
-
 N_COMPONENTS = 3
 N_ROWS = 20
 

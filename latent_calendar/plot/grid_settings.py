@@ -1,7 +1,7 @@
-from typing import Generator
+from collections.abc import Generator
 
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
 from latent_calendar.plot.elements import (
     DayLabeler,

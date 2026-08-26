@@ -1,17 +1,16 @@
 """Tests for latent_calendar.html module."""
 
-import pytest
 import numpy as np
 import pandas as pd
-
+import pytest
 
 # Skip all tests if altair is not installed
 altair = pytest.importorskip("altair")
 
-from latent_calendar.html import (  # noqa: E402
-    wide_to_long_format,
+from latent_calendar.html import (
     create_calendar_chart,
     dataframe_to_long_format,
+    wide_to_long_format,
 )
 
 
