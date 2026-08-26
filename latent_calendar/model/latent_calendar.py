@@ -13,18 +13,15 @@ X_pred = model.predict(X)
 
 """
 
-from packaging.version import Version
-
 import numpy as np
 import pandas as pd
-
+from conjugate.distributions import Dirichlet
+from conjugate.models import multinomial_dirichlet
+from packaging.version import Version
 from sklearn import __version__ as sklearn_version
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import LatentDirichletAllocation as BaseLDA
-
-
-from conjugate.distributions import Dirichlet
-from conjugate.models import multinomial_dirichlet
+from sklearn.decomposition._lda import _dirichlet_expectation_2d
 
 
 def joint_distribution(X_latent: np.ndarray, components: np.ndarray) -> np.ndarray:
@@ -40,7 +37,105 @@ class LatentCalendar(BaseLDA):
     Provides a `predict` method that returns the marginal probability of each time slot for a given row and
     a `transform` method that returns the latent representation of each row.
 
+    Args:
+        init: initial component matrix of shape (n_components, n_features).
+            If None, components are initialized randomly via Gamma distribution.
+        init_weights: initial component weights of shape (n_components,).
+            Scales each component row. If None, weights are derived from
+            component row sums.
+        n_components: number of topics (default 10).
+        doc_topic_prior: prior for document-topic distribution.
+        topic_word_prior: prior for topic-word distribution.
+        learning_method: 'batch' or 'online'.
+        learning_decay: decay factor for online learning.
+        learning_offset: control for earlier iterations.
+        max_iter: maximum number of iterations.
+        batch_size: number of documents per batch.
+        evaluate_every: evaluate perplexity every N iterations.
+        total_samples: total documents for online learning.
+        perp_tol: perplexity tolerance for early stopping.
+        mean_change_tol: mean change tolerance for early stopping.
+        max_doc_update_iter: max E-step iterations.
+        n_jobs: number of parallel jobs.
+        verbose: verbosity level.
+        random_state: random state for reproducibility.
+
     """
+
+    def __init__(
+        self,
+        *,
+        init=None,
+        init_weights=None,
+        n_components=10,
+        doc_topic_prior=None,
+        topic_word_prior=None,
+        learning_method="batch",
+        learning_decay=0.7,
+        learning_offset=10.0,
+        max_iter=10,
+        batch_size=128,
+        evaluate_every=-1,
+        total_samples=1e6,
+        perp_tol=0.1,
+        mean_change_tol=1e-3,
+        max_doc_update_iter=100,
+        n_jobs=None,
+        verbose=0,
+        random_state=None,
+    ):
+        super().__init__(
+            n_components=n_components,
+            doc_topic_prior=doc_topic_prior,
+            topic_word_prior=topic_word_prior,
+            learning_method=learning_method,
+            learning_decay=learning_decay,
+            learning_offset=learning_offset,
+            max_iter=max_iter,
+            batch_size=batch_size,
+            evaluate_every=evaluate_every,
+            total_samples=total_samples,
+            perp_tol=perp_tol,
+            mean_change_tol=mean_change_tol,
+            max_doc_update_iter=max_doc_update_iter,
+            n_jobs=n_jobs,
+            verbose=verbose,
+            random_state=random_state,
+        )
+        self.init = init
+        self.init_weights = init_weights
+
+    def _init_latent_vars(self, n_features, dtype=np.float64):
+        super()._init_latent_vars(n_features, dtype=dtype)
+
+        components = self.components_
+
+        if self.init is not None:
+            init = np.asarray(self.init, dtype=dtype)
+            if init.shape != (self.n_components, n_features):
+                raise ValueError(
+                    f"init shape {init.shape} != expected "
+                    f"({self.n_components}, {n_features})"
+                )
+            if np.any(init < 0):
+                raise ValueError("init must contain non-negative values")
+            components = init
+
+        if self.init_weights is not None:
+            weights = np.asarray(self.init_weights, dtype=dtype)
+            if weights.shape != (self.n_components,):
+                raise ValueError(
+                    f"init_weights shape {weights.shape} != expected "
+                    f"({self.n_components},)"
+                )
+            if np.any(weights < 0):
+                raise ValueError("init_weights must contain non-negative values")
+            components = components * weights[:, np.newaxis]
+
+        self.components_ = components
+        self.exp_dirichlet_component_ = np.exp(
+            _dirichlet_expectation_2d(self.components_)
+        )
 
     @property
     def normalized_components_(self) -> np.ndarray:
