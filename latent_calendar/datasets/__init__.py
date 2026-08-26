@@ -30,7 +30,7 @@ from pathlib import Path
 
 import pandas as pd
 
-__all__ = ["load_online_transactions", "load_chicago_bikes", "load_ufo_sightings"]
+__all__ = ["load_chicago_bikes", "load_online_transactions", "load_ufo_sightings"]
 
 
 HERE = Path(__file__).parent

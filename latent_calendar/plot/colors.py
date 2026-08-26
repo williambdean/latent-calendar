@@ -18,16 +18,14 @@ Example:
 
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import rgb2hex, Normalize
-from matplotlib.cm import ScalarMappable
-
 import numpy as np
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize, rgb2hex
 
 from latent_calendar.plot.config import CONFIG
-
 
 CM = Callable[[float], tuple[int, int, int, int]]
 CMAP = Callable[[float], str]

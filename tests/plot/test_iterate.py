@@ -1,15 +1,14 @@
+import numpy as np
+import pandas as pd
 import pytest
 
-import pandas as pd
-import numpy as np
-
 from latent_calendar.plot.iterate import (
-    iterate_matrix,
-    iterate_long_array,
-    iterate_dataframe,
+    CalendarData,
     IterConfig,
     VocabIterConfig,
-    CalendarData,
+    iterate_dataframe,
+    iterate_long_array,
+    iterate_matrix,
 )
 
 

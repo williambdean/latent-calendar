@@ -1,12 +1,11 @@
-import pytest
-
 import warnings
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
 from latent_calendar.model.latent_calendar import LatentCalendar
-from latent_calendar.model.utils import transform_on_dataframe, predict_on_dataframe
+from latent_calendar.model.utils import predict_on_dataframe, transform_on_dataframe
 
 
 @pytest.fixture

@@ -12,7 +12,7 @@ from latent_calendar.plot.colors import (  # noqa
     create_default_divergent_cmap,
     settle_data_and_cmap,
 )
-from latent_calendar.plot.core import (  # noqa
+from latent_calendar.plot.core import (
     plot_blank_calendar,
     plot_calendar,
     plot_dataframe_as_calendar,
@@ -29,7 +29,7 @@ from latent_calendar.plot.core import (  # noqa
     plot_model_components,
     plot_component_sensitivity,
 )
-from latent_calendar.plot.elements import (  # noqa
+from latent_calendar.plot.elements import (
     CalendarEvent,
     DayLabeler,
     DisplaySettings,
@@ -38,11 +38,11 @@ from latent_calendar.plot.elements import (  # noqa
     TimeLabeler,
     create_default_days,
 )
-from latent_calendar.plot.grid_settings import (  # noqa
+from latent_calendar.plot.grid_settings import (
     default_plot_axes_in_grid,
     display_settings_in_grid,
 )
-from latent_calendar.plot.iterate import (  # noqa
+from latent_calendar.plot.iterate import (
     iterate_dataframe,
     iterate_series,
     iterate_long_array,

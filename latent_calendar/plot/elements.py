@@ -4,14 +4,13 @@ Includes x-axis, y-axis, and their settings, as well as the calendar events.
 
 """
 
-from typing import Literal
-
 import calendar
 from dataclasses import dataclass, field, replace
+from typing import Literal
 
 import matplotlib.pyplot as plt
 
-from latent_calendar.const import HOURS_IN_DAY, DAYS_IN_WEEK
+from latent_calendar.const import DAYS_IN_WEEK, HOURS_IN_DAY
 from latent_calendar.plot.iterate import CalendarData
 from latent_calendar.vocab import HourFormatter, get_day_hour
 

@@ -14,20 +14,18 @@ df_wide = transformers.fit_transform(df)
 import warnings
 
 import narwhals as nw
-from narwhals.typing import FrameT, IntoFrameT
-
 import pandas as pd
-
+from narwhals.typing import FrameT, IntoFrameT
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 
 from latent_calendar.const import (
-    create_full_vocab,
     DAYS_IN_WEEK,
     HOURS_IN_DAY,
+    MICROSECONDS_IN_DAY,
     MINUTES_IN_DAY,
     SECONDS_IN_DAY,
-    MICROSECONDS_IN_DAY,
+    create_full_vocab,
 )
 
 

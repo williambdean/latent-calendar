@@ -1,9 +1,9 @@
 import latent_calendar.extensions  # noqa
-from latent_calendar.model.latent_calendar import (  # noqa
+from latent_calendar.model.latent_calendar import (
     LatentCalendar,
     ConjugateModel,
     DummyModel,
     MarginalModel,
 )
 from latent_calendar.transformers import raw_to_aggregate
-from latent_calendar.generate import LatentCalendarSampler, sample_from_latent_calendar  # noqa
+from latent_calendar.generate import LatentCalendarSampler, sample_from_latent_calendar

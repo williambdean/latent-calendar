@@ -1,11 +1,10 @@
+import numpy as np
 import pytest
 
-import numpy as np
-
 from latent_calendar.plot.grid_settings import (
-    last_in_column,
-    is_left_edge,
     get_rows_and_cols,
+    is_left_edge,
+    last_in_column,
 )
 
 

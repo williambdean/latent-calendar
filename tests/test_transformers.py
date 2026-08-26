@@ -1,17 +1,16 @@
-import pytest
-
 import narwhals as nw
 import pandas as pd
 import polars as pl
 import polars.testing
+import pytest
 
 from latent_calendar.transformers import (
-    prop_into_day,
     CalendarTimestampFeatures,
     HourDiscretizer,
     VocabTransformer,
-    create_timestamp_feature_pipeline,
     create_raw_to_vocab_transformer,
+    create_timestamp_feature_pipeline,
+    prop_into_day,
     raw_to_aggregate,
 )
 

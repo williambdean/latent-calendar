@@ -1,15 +1,14 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-import pandas as pd
-
 from latent_calendar.datasets import (
+    HERE,
     load_chicago_bikes,
     load_online_transactions,
     load_ufo_sightings,
-    HERE,
 )
 
 DATASETS_DIR = Path(__file__).parents[1] / "datasets"
