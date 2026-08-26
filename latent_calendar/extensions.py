@@ -82,9 +82,8 @@ Examples:
 from typing import Literal
 
 import narwhals as nw
-
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 try:
     import polars as pl
@@ -96,33 +95,32 @@ except ImportError:
 import matplotlib.pyplot as plt
 
 from latent_calendar.model.latent_calendar import LatentCalendar
-from latent_calendar.model.utils import transform_on_dataframe, predict_on_dataframe
+from latent_calendar.model.utils import predict_on_dataframe, transform_on_dataframe
 from latent_calendar.plot.colors import CMAP, ColorMap
 from latent_calendar.plot.core import (
     plot_calendar_by_row,
-    plot_profile_by_row,
     plot_dataframe_as_calendar,
-    plot_series_as_calendar,
     plot_dataframe_grid_across_column,
     plot_model_predictions_by_row,
+    plot_profile_by_row,
+    plot_series_as_calendar,
 )
-from latent_calendar.plot.core.calendar import TITLE_FUNC, CMAP_GENERATOR
-from latent_calendar.plot.elements import DayLabeler, TimeLabeler, GridLines
+from latent_calendar.plot.core.calendar import CMAP_GENERATOR, TITLE_FUNC
+from latent_calendar.plot.elements import DayLabeler, GridLines, TimeLabeler
 from latent_calendar.plot.iterate import StartEndConfig
-
 from latent_calendar.segments.convolution import (
+    sum_next_hours,
     sum_over_segments,
     sum_over_vocab,
-    sum_next_hours,
 )
 from latent_calendar.transformers import (
+    LongToWide,
+    create_discretized_hour,
     create_raw_to_vocab_transformer,
     create_timestamp_feature_pipeline,
-    LongToWide,
-    raw_to_aggregate,
     create_timestamp_features,
-    create_discretized_hour,
     create_vocab,
+    raw_to_aggregate,
 )
 
 
@@ -257,7 +255,7 @@ class PandasSeriesAccessor:
         """
 
         if not isinstance(self._obj.index, pd.MultiIndex):
-            raise ValueError(
+            raise TypeError(
                 "Series is expected to have a MultiIndex with the last column as the vocab."
             )
 
@@ -267,11 +265,11 @@ class PandasSeriesAccessor:
         self,
         *,
         duration: int = 5,
-        alpha: float = None,
+        alpha: float | None = None,
         cmap=None,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
-        grid_lines: GridLines = GridLines(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
+        grid_lines: GridLines | None = None,
         monday_start: bool = True,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -291,6 +289,12 @@ class PandasSeriesAccessor:
             Modified matplotlib axis
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
+        if grid_lines is None:
+            grid_lines = GridLines()
         tmp_name = "tmp_name"
         config = StartEndConfig(start=tmp_name, end=None, minutes=duration)
 
@@ -309,11 +313,11 @@ class PandasSeriesAccessor:
     def plot_row(
         self,
         *,
-        alpha: float = None,
+        alpha: float | None = None,
         cmap=None,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
-        grid_lines: GridLines = GridLines(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
+        grid_lines: GridLines | None = None,
         monday_start: bool = True,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -329,6 +333,12 @@ class PandasSeriesAccessor:
             Modified matplotlib axis
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
+        if grid_lines is None:
+            grid_lines = GridLines()
         return plot_series_as_calendar(
             self._obj,
             alpha=alpha,
@@ -399,7 +409,7 @@ class PandasDataFrameAccessor:
 
         """
         if not isinstance(self._obj.columns, pd.MultiIndex):
-            raise ValueError(
+            raise TypeError(
                 "DataFrame is expected to have a MultiIndex with the last column as the vocab."
             )
 
@@ -459,7 +469,7 @@ class PandasDataFrameAccessor:
 
         """
         if not isinstance(self._obj.index, pd.MultiIndex):
-            raise ValueError(
+            raise TypeError(
                 "DataFrame is expected to have a MultiIndex with the last column as the vocab."
             )
 
@@ -583,11 +593,11 @@ class PandasDataFrameAccessor:
         *,
         end_col: str | None = None,
         duration: int | None = None,
-        alpha: float = None,
+        alpha: float | None = None,
         cmap=None,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
-        grid_lines: GridLines = GridLines(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
+        grid_lines: GridLines | None = None,
         monday_start: bool = True,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -606,6 +616,12 @@ class PandasDataFrameAccessor:
             Modified matplotlib axis
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
+        if grid_lines is None:
+            grid_lines = GridLines()
         config = StartEndConfig(start=start_col, end=end_col, minutes=duration)
 
         return plot_dataframe_as_calendar(
@@ -627,11 +643,11 @@ class PandasDataFrameAccessor:
         *,
         end_col: str | None = None,
         duration: int | None = None,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
-        grid_lines: GridLines = GridLines(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
+        grid_lines: GridLines | None = None,
         max_cols: int = 3,
-        alpha: float = None,
+        alpha: float | None = None,
     ) -> None:
         """Plot DataFrame of timestamps as a calendar as grid across column values.
 
@@ -649,6 +665,12 @@ class PandasDataFrameAccessor:
             None
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
+        if grid_lines is None:
+            grid_lines = GridLines()
         config = StartEndConfig(start=start_col, end=end_col, minutes=duration)
 
         plot_dataframe_grid_across_column(
@@ -668,9 +690,9 @@ class PandasDataFrameAccessor:
         max_cols: int = 3,
         title_func: TITLE_FUNC | None = None,
         cmaps: CMAP | ColorMap | CMAP_GENERATOR | None = None,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
-        grid_lines: GridLines = GridLines(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
+        grid_lines: GridLines | None = None,
         monday_start: bool = True,
     ) -> None:
         """Plot each row of the DataFrame as a calendar plot. Data must have been transformed to wide format first.
@@ -690,6 +712,12 @@ class PandasDataFrameAccessor:
             None
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
+        if grid_lines is None:
+            grid_lines = GridLines()
         return plot_calendar_by_row(
             self._obj,
             max_cols=max_cols,
@@ -707,8 +735,8 @@ class PandasDataFrameAccessor:
         model: LatentCalendar,
         index_func=lambda idx: idx,
         include_components: bool = True,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
     ) -> np.ndarray:
         """Plot each row of the DataFrame as a profile plot. Data must have been transformed to wide format first.
 
@@ -723,6 +751,10 @@ class PandasDataFrameAccessor:
             grid of axes
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
         return plot_profile_by_row(
             self._obj,
             model=model,
@@ -737,8 +769,8 @@ class PandasDataFrameAccessor:
         *,
         model: LatentCalendar,
         index_func=lambda idx: idx,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
     ) -> np.ndarray:
         """Plot raw and predicted values for a model. Data must have been transformed to wide format first.
 
@@ -752,6 +784,10 @@ class PandasDataFrameAccessor:
             grid of axes
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
         return plot_profile_by_row(
             self._obj,
             model=model,
@@ -768,8 +804,8 @@ class PandasDataFrameAccessor:
         model: LatentCalendar,
         index_func=lambda idx: idx,
         divergent: bool = True,
-        day_labeler: DayLabeler = DayLabeler(),
-        time_labeler: TimeLabeler = TimeLabeler(),
+        day_labeler: DayLabeler | None = None,
+        time_labeler: TimeLabeler | None = None,
     ) -> np.ndarray:
         """Plot model predictions for each row of the DataFrame. Data must have been transformed to wide format first.
 
@@ -785,6 +821,10 @@ class PandasDataFrameAccessor:
             grid of axes
 
         """
+        if day_labeler is None:
+            day_labeler = DayLabeler()
+        if time_labeler is None:
+            time_labeler = TimeLabeler()
         return plot_model_predictions_by_row(
             self._obj,
             df_holdout=df_holdout,

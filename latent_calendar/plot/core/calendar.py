@@ -1,43 +1,43 @@
+from collections.abc import Callable, Generator
 from itertools import repeat
-from typing import Any, Callable, Generator
+from typing import Any
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
 from latent_calendar.plot.colors import (
     CMAP,
+    ColorMap,
     create_default_cmap,
     create_default_divergent_cmap,
-    ColorMap,
 )
 from latent_calendar.plot.elements import (
     CalendarEvent,
-    update_display_settings,
-    update_start,
-    configure_axis,
+    DayLabeler,
     DisplaySettings,
     GridLines,
     TimeLabeler,
-    DayLabeler,
+    configure_axis,
+    update_display_settings,
+    update_start,
 )
 from latent_calendar.plot.grid_settings import default_axes_and_grid_axes
 from latent_calendar.plot.iterate import (
     CALENDAR_ITERATION,
     DataFrameConfig,
     iterate_dataframe,
-    iterate_series,
     iterate_long_array,
+    iterate_series,
 )
 
 
 def plot_blank_calendar(
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
     display_settings: DisplaySettings | None = None,
     ax: plt.Axes | None = None,
-    grid_lines: GridLines = GridLines(),
+    grid_lines: GridLines | None = None,
     monday_start: bool = True,
 ) -> plt.Axes:
     """Create a blank calendar with no data
@@ -54,6 +54,13 @@ def plot_blank_calendar(
         Modified matplotlib axis
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+    if grid_lines is None:
+        grid_lines = GridLines()
+
     update_start(day_labeler=day_labeler, monday_start=monday_start)
 
     if display_settings is not None:
@@ -74,13 +81,13 @@ def plot_blank_calendar(
 def plot_calendar(
     calendar_iter: CALENDAR_ITERATION,
     *,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
     display_settings: DisplaySettings | None = None,
     cmap: CMAP | None = None,
     alpha: float | None = None,
     ax: plt.Axes | None = None,
-    grid_lines: GridLines = GridLines(),
+    grid_lines: GridLines | None = None,
     monday_start: bool = True,
 ) -> plt.Axes:
     """Plot a calendar from generator of values.
@@ -101,6 +108,13 @@ def plot_calendar(
         Modified matplotlib axis
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+    if grid_lines is None:
+        grid_lines = GridLines()
+
     ax = plot_blank_calendar(
         day_labeler=day_labeler,
         time_labeler=time_labeler,
@@ -131,9 +145,9 @@ def plot_calendar(
 def plot_series_as_calendar(
     series: pd.Series,
     *,
-    grid_lines: GridLines = GridLines(),
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
+    grid_lines: GridLines | None = None,
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
     cmap: CMAP | None = None,
     alpha: float | None = None,
     ax: plt.Axes | None = None,
@@ -155,6 +169,13 @@ def plot_series_as_calendar(
         new or modified axes
 
     """
+    if grid_lines is None:
+        grid_lines = GridLines()
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+
     if cmap is None:
         cmap = create_default_cmap(value=series.to_numpy().max())
 
@@ -174,9 +195,9 @@ def plot_dataframe_as_calendar(
     df: pd.DataFrame,
     config: DataFrameConfig,
     *,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
-    grid_lines: GridLines = GridLines(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
+    grid_lines: GridLines | None = None,
     cmap: CMAP | None = None,
     alpha: float | None = None,
     ax: plt.Axes | None = None,
@@ -199,6 +220,13 @@ def plot_dataframe_as_calendar(
         new or modified axes
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+    if grid_lines is None:
+        grid_lines = GridLines()
+
     return plot_calendar(
         iterate_dataframe(df, config),
         day_labeler=day_labeler,
@@ -238,7 +266,7 @@ def plot_calendar_by_row(
     day_labeler: DayLabeler | None = None,
     time_labeler: TimeLabeler | None = None,
     cmaps: CMAP | ColorMap | CMAP_GENERATOR | None = None,
-    grid_lines: GridLines = GridLines(),
+    grid_lines: GridLines | None = None,
     monday_start: bool = True,
 ) -> None:
     """Iterate a DataFrame by row and plot calendar events.
@@ -257,6 +285,9 @@ def plot_calendar_by_row(
         None
 
     """
+    if grid_lines is None:
+        grid_lines = GridLines()
+
     n_cols = len(df.columns)
     if n_cols % 7 != 0:
         raise CalendarFormatError(
@@ -305,9 +336,9 @@ def plot_dataframe_grid_across_column(
     *,
     alpha: float | None = None,
     monday_start: bool = True,
-    day_labeler: DayLabeler = DayLabeler(),
-    time_labeler: TimeLabeler = TimeLabeler(),
-    grid_lines: GridLines = GridLines(),
+    day_labeler: DayLabeler | None = None,
+    time_labeler: TimeLabeler | None = None,
+    grid_lines: GridLines | None = None,
 ) -> None:
     """Plot the long DataFrame in a grid by some different column.
 
@@ -322,6 +353,13 @@ def plot_dataframe_grid_across_column(
         monday_start: whether to start the week on Monday or Sunday
 
     """
+    if day_labeler is None:
+        day_labeler = DayLabeler()
+    if time_labeler is None:
+        time_labeler = TimeLabeler()
+    if grid_lines is None:
+        grid_lines = GridLines()
+
     if grid_col not in df.columns:
         msg = f"{grid_col} is not in the DataFrame."
         raise KeyError(msg)
