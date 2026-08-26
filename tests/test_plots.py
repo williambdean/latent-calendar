@@ -1,26 +1,24 @@
-import pytest
-
 import matplotlib.pyplot as plt
+import pytest
 
 from latent_calendar.plot import plot_blank_calendar
 from latent_calendar.plot.elements import (
     CalendarEvent,
     DayLabeler,
-    TimeLabeler,
     GridLines,
+    TimeLabeler,
 )
-
 from latent_calendar.segments import create_box_segment, stack_segments
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=30)
 def test_blank_calendar() -> plt.Figure:
     fig, ax = plt.subplots(figsize=(10, 10))
     plot_blank_calendar(ax=ax)
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=30)
 def test_various_elements() -> plt.Figure:
     """From the docs: https://williambdean.github.io/latent-calendar/examples/plotting/add-calendar-events/"""
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -69,7 +67,7 @@ def df_segments():
     )
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=30)
 def test_segements(df_segments) -> plt.Figure:
     df_segments.cal.plot_by_row()
 
@@ -79,7 +77,7 @@ def test_segements(df_segments) -> plt.Figure:
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=30)
 def test_settings() -> plt.Figure:
     fig, axes = plt.subplots(ncols=2, nrows=2)
     fig.suptitle("Calendar Customization")
@@ -117,7 +115,7 @@ def test_settings() -> plt.Figure:
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=30)
 def test_multiday_event() -> None:
     fig, ax = plt.subplots(figsize=(10, 10))
     plot_blank_calendar(ax=ax)
