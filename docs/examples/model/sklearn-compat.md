@@ -20,13 +20,14 @@ from latent_calendar import LatentCalendar
 
 
 def create_hard_clustering_pipeline(n_components: int) -> Pipeline:
-    gaussian_components = n_components ** 2 - 1
+    gaussian_components = n_components**2 - 1
     return Pipeline(
         [
             ("latent_calendar", LatentCalendar(n_components=n_components)),
             ("gaussian_mixture", GaussianMixture(n_components=gaussian_components)),
         ]
     )
+
 
 pipeline = create_hard_clustering_pipeline(n_components=3)
 pipeline.fit(df_wide)
@@ -49,7 +50,8 @@ df_wide["total_events"] = df_wide.sum(axis=1)
 transformer = ColumnTransformer(
     [
         ("latent_calendar", LatentCalendar(n_components=3), vocab_columns),
-    ], remainder="passthrough"
+    ],
+    remainder="passthrough",
 )
 
 transformer = transformer.fit(df_wide)
@@ -62,6 +64,7 @@ import pandas as pd
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
+
 
 class RemoveLowVolumeTimeSlots(BaseEstimator, TransformerMixin):
     def __init__(self, model: LatentCalendar, min_count: int):

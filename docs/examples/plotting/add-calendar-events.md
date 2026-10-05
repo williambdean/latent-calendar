@@ -18,17 +18,24 @@ from latent_calendar.plot.elements import CalendarEvent
 ax = plot_blank_calendar()
 
 event = CalendarEvent(
-    day=4, start=12, duration=90,
+    day=4,
+    start=12,
+    duration=90,
 )
 event.plot(ax=ax, label="90 minutes", linestyle="--", alpha=0.25)
 
 event = CalendarEvent(
-    day=0, start=23, duration=3 * 60,
+    day=0,
+    start=23,
+    duration=3 * 60,
 )
 event.plot(ax=ax, label="Overnight", facecolor="red", linestyle="dashed", lw=1.5)
 
 event = CalendarEvent(
-    day=6, start=17, end=19, days=3,
+    day=6,
+    start=17,
+    end=19,
+    days=3,
 )
 event.plot(ax=ax, label="Multiday", facecolor="orange", linestyle="--")
 

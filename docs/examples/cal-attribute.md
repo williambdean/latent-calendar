@@ -65,10 +65,8 @@ shape: (336, 4)
 The aggregate event level data into wide format calendar data with the [`cal.widen`](./../modules/extensions.md#latent_calendar.extensions.PandasDataFrameAccessor.widen) method. This results in 7 * 24 = 168 columns, one for each hour of the week.
 
 ```python
-
 df_member_casual = (
-    df_agg
-    .to_pandas()
+    df_agg.to_pandas()
     .set_index(["member_casual", "day_of_week", "hour"])
     .cal.widen("num_events")
 )
@@ -91,11 +89,7 @@ Various plot methods are available on the `cal` attribute of DataFrames. For ins
 Custom [color maps](./../modules/plot/colors.md#latent_calendar.plot.colors) can be passed, but normalizing each row by the maximum value also does the trick.
 
 ```python
-(
-    df_member_casual
-    .cal.divide_by_max()
-    .cal.plot_by_row()
-)
+(df_member_casual.cal.divide_by_max().cal.plot_by_row())
 fig = plt.gcf()
 fig.suptitle("Bike Rentals by Member Type")
 plt.show()

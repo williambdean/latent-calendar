@@ -11,11 +11,7 @@ from latent_calendar.datasets import load_chicago_bikes
 df = load_chicago_bikes()
 df_member_casual = df.cal.aggregate_events("member_casual", timestamp_col="started_at")
 
-(
-    df_member_casual
-    .cal.divide_by_max()
-    .cal.plot_by_row()
-)
+(df_member_casual.cal.divide_by_max().cal.plot_by_row())
 fig = plt.gcf()
 fig.suptitle("Bike Rentals by Member Type")
 plt.show()

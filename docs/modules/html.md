@@ -36,26 +36,25 @@ from latent_calendar.html import create_calendar_chart
 
 # Load and aggregate data
 df = load_ufo_sightings()
-df_states = df[df['country'] == 'us'].cal.aggregate_events(
-    by='state/province',
-    timestamp_col='Date_time'
+df_states = df[df["country"] == "us"].cal.aggregate_events(
+    by="state/province", timestamp_col="Date_time"
 )
 
 # Create chart for California
 chart = create_calendar_chart(
-    df_states.loc['ca'],
+    df_states.loc["ca"],
     title="California UFO Sightings",
     width=500,
     height=350,
-    color_scheme='greens'
+    color_scheme="greens",
 )
 
 # Save directly to file
-chart.save('calendar.html')
+chart.save("calendar.html")
 
 # Or get HTML string for embedding
 html = chart.to_html()
-with open('calendar.html', 'w') as f:
+with open("calendar.html", "w") as f:
     f.write(html)
 ```
 
@@ -75,17 +74,12 @@ df_agg = df.cal.aggregate_events("member_casual", "started_at")
 
 # Create base chart directly from aggregated data
 # The function automatically detects multi-row format and converts it
-chart = create_calendar_chart(
-    df_agg,
-    width=250,
-    height=200,
-    color_scheme='viridis'
-)
+chart = create_calendar_chart(df_agg, width=250, height=200, color_scheme="viridis")
 
 # Apply faceting using Altair's .facet() method
 # Use the index name from aggregate_events as the grouping column
-faceted = chart.facet(column='member_casual:N')
-faceted.save('faceted_calendar.html')
+faceted = chart.facet(column="member_casual:N")
+faceted.save("faceted_calendar.html")
 ```
 
 **Chain methods for compact code:**
@@ -93,11 +87,11 @@ faceted.save('faceted_calendar.html')
 ```python
 # Create chart with custom properties and faceting in one expression
 faceted = (
-    create_calendar_chart(df_agg, color_scheme='viridis')
+    create_calendar_chart(df_agg, color_scheme="viridis")
     .properties(width=250, height=200, title="Bike Share Patterns")
-    .facet(column='member_casual:N', columns=2)
+    .facet(column="member_casual:N", columns=2)
 )
-faceted.save('faceted_calendar.html')
+faceted.save("faceted_calendar.html")
 ```
 
 **Using explicit conversion (optional):**
@@ -111,27 +105,24 @@ from latent_calendar.html import dataframe_to_long_format
 df_long = dataframe_to_long_format(df_agg, group_col="rider_type")
 
 chart = create_calendar_chart(df_long)
-faceted = chart.facet(column='rider_type:N')
+faceted = chart.facet(column="rider_type:N")
 ```
 
 **Advanced faceting options:**
 
 ```python
 # Two-dimensional faceting (e.g., by season and rider type)
-faceted_2d = chart.facet(
-    row='season:N',
-    column='rider_type:N'
-)
+faceted_2d = chart.facet(row="season:N", column="rider_type:N")
 
 # Custom number of columns in facet grid
 faceted = chart.facet(
-    column='station_name:N',
-    columns=3  # 3 charts per row
+    column="station_name:N",
+    columns=3,  # 3 charts per row
 )
 
 # Adjust sizing before faceting
 smaller_chart = chart.properties(width=200, height=150)
-faceted = smaller_chart.facet(column='group:N')
+faceted = smaller_chart.facet(column="group:N")
 ```
 
 ### Creating Altair Chart Objects
@@ -141,13 +132,13 @@ from latent_calendar.html import create_calendar_chart
 
 # Create a chart object for further customization
 chart = create_calendar_chart(
-    df_states.loc['ca'],
+    df_states.loc["ca"],
     title="Weekly Pattern",
     width=400,
     height=300,
-    color_scheme='viridis',
+    color_scheme="viridis",
     show_values=True,
-    monday_start=True
+    monday_start=True,
 )
 
 # Customize further with Altair API
@@ -164,9 +155,7 @@ from latent_calendar.html import create_calendar_chart
 
 # Create and display chart in notebook
 chart = create_calendar_chart(
-    calendar_data,
-    title="Activity Pattern",
-    color_scheme='greens'
+    calendar_data, title="Activity Pattern", color_scheme="greens"
 )
 
 # Chart displays automatically in Jupyter
@@ -179,10 +168,7 @@ chart
 from latent_calendar.html import wide_to_long_format, dataframe_to_long_format
 
 # Convert single row (168 columns) to long format
-df_long = wide_to_long_format(
-    df_states.loc['ca'],
-    monday_start=True
-)
+df_long = wide_to_long_format(df_states.loc["ca"], monday_start=True)
 
 print(df_long)
 # Output:
@@ -195,7 +181,7 @@ print(df_long)
 # Convert multiple rows for faceting
 df_long_multi = dataframe_to_long_format(
     df_states.head(3),  # Multiple states
-    group_col="state"
+    group_col="state",
 )
 
 print(df_long_multi)
@@ -247,8 +233,8 @@ For smaller file sizes and cleaner appearance:
 chart = create_calendar_chart(
     data,
     show_values=False,  # Hide numeric labels
-    width=350,          # Smaller dimensions
-    height=250
+    width=350,  # Smaller dimensions
+    height=250,
 )
 html = chart.to_html()
 ```
@@ -265,11 +251,13 @@ chart = create_calendar_chart(data, monday_start=False)
 Control Altair rendering behavior:
 ```python
 chart = create_calendar_chart(data)
-html = chart.to_html(embed_options={
-    'mode': 'vega-lite',
-    'renderer': 'svg',  # Use SVG instead of Canvas
-    'actions': False    # Hide action menu
-})
+html = chart.to_html(
+    embed_options={
+        "mode": "vega-lite",
+        "renderer": "svg",  # Use SVG instead of Canvas
+        "actions": False,  # Hide action menu
+    }
+)
 ```
 
 ## Technical Details
