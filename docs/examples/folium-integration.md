@@ -30,13 +30,12 @@ from latent_calendar.integrations.folium import create_calendar_popup
 
 # 1. Load and aggregate data by state
 df = load_ufo_sightings()
-df_states = df[df['country'] == 'us'].cal.aggregate_events(
-    by='state/province',
-    timestamp_col='Date_time'
+df_states = df[df["country"] == "us"].cal.aggregate_events(
+    by="state/province", timestamp_col="Date_time"
 )
 
 # 2. Get California's weekly pattern (168 values)
-california_data = df_states.loc['ca']
+california_data = df_states.loc["ca"]
 
 # 3. Create an interactive popup
 popup = create_calendar_popup(
@@ -44,18 +43,16 @@ popup = create_calendar_popup(
     title="California UFO Sightings",
     width=400,
     height=280,
-    color_scheme='blues'
+    color_scheme="blues",
 )
 
 # 4. Add to map
 m = folium.Map(location=[36.7, -119.7], zoom_start=6)
 folium.Marker(
-    location=[36.7, -119.7],
-    popup=popup,
-    tooltip="Click to see calendar"
+    location=[36.7, -119.7], popup=popup, tooltip="Click to see calendar"
 ).add_to(m)
 
-m.save('california_ufos.html')
+m.save("california_ufos.html")
 ```
 
 ## Understanding the Data Format
@@ -101,6 +98,7 @@ pip install latent-calendar[html,folium] requests us
 
 ```python
 """Interactive map showing weekly UFO sighting patterns by state."""
+
 import folium
 import requests
 import us  # For state name/abbreviation mapping
@@ -112,14 +110,11 @@ print("Loading UFO sightings data...")
 df = load_ufo_sightings()
 
 # Filter to US sightings and clean state codes
-df_us = df[df['country'] == 'us'].copy()
-df_us['state/province'] = df_us['state/province'].str.lower().str.strip()
+df_us = df[df["country"] == "us"].copy()
+df_us["state/province"] = df_us["state/province"].str.lower().str.strip()
 
 # Aggregate to weekly calendar format (7 days × 24 hours = 168 time slots)
-df_states = df_us.cal.aggregate_events(
-    by='state/province',
-    timestamp_col='Date_time'
-)
+df_states = df_us.cal.aggregate_events(by="state/province", timestamp_col="Date_time")
 print(f"Aggregated data for {len(df_states)} states")
 
 # Calculate total sightings per state for choropleth coloring
@@ -127,16 +122,16 @@ state_totals = df_states.sum(axis=1).to_dict()
 
 # 2. Load US states GeoJSON
 print("Fetching US states GeoJSON...")
-geojson_url = 'https://raw.githubusercontent.com/python-visualization/folium-example-data/main/us_states.json'
+geojson_url = "https://raw.githubusercontent.com/python-visualization/folium-example-data/main/us_states.json"
 geo_data = requests.get(geojson_url).json()
 
 # 3. Create map centered on US
-m = folium.Map(location=[37.8, -96], zoom_start=4, tiles='cartodbpositron')
+m = folium.Map(location=[37.8, -96], zoom_start=4, tiles="cartodbpositron")
 
 # 4. Add calendar popup to each state polygon
 print("Adding state popups...")
-for feature in geo_data['features']:
-    state_name = feature['properties']['name']
+for feature in geo_data["features"]:
+    state_name = feature["properties"]["name"]
 
     # Convert state name to abbreviation
     state_obj = us.states.lookup(state_name)
@@ -154,32 +149,32 @@ for feature in geo_data['features']:
                 title=f"UFO Sightings in {state_name}",
                 width=400,
                 height=280,
-                color_scheme='blues',
-                show_values=False  # Faster rendering
+                color_scheme="blues",
+                show_values=False,  # Faster rendering
             )
 
             # Color by total sightings
             if total > 5000:
-                fill_color = '#08519c'  # Dark blue
+                fill_color = "#08519c"  # Dark blue
             elif total > 1000:
-                fill_color = '#3182bd'
+                fill_color = "#3182bd"
             else:
-                fill_color = '#9ecae1'  # Light blue
+                fill_color = "#9ecae1"  # Light blue
 
             folium.GeoJson(
                 feature,
                 style_function=lambda x, color=fill_color: {
-                    'fillColor': color,
-                    'fillOpacity': 0.6,
-                    'color': 'black',
-                    'weight': 1
+                    "fillColor": color,
+                    "fillOpacity": 0.6,
+                    "color": "black",
+                    "weight": 1,
                 },
                 popup=popup,
-                tooltip=state_name
+                tooltip=state_name,
             ).add_to(m)
 
 # 5. Save map
-m.save('ufo_sightings_map.html')
+m.save("ufo_sightings_map.html")
 ```
 
 **What this creates:**
@@ -210,22 +205,19 @@ from latent_calendar.integrations.folium import create_calendar_popup
 
 # Aggregate by state
 df = load_ufo_sightings()
-df_states = df[df['country'] == 'us'].cal.aggregate_events(
-    by='state/province',
-    timestamp_col='Date_time'
+df_states = df[df["country"] == "us"].cal.aggregate_events(
+    by="state/province", timestamp_col="Date_time"
 )
 
 # Create popup for California
 popup = create_calendar_popup(
-    df_states.loc['ca'],
-    title="California UFO Sightings",
-    color_scheme='blues'
+    df_states.loc["ca"], title="California UFO Sightings", color_scheme="blues"
 )
 
 # Add to map
 m = folium.Map(location=[36.7, -119.7], zoom_start=6)
 folium.Marker([36.7, -119.7], popup=popup).add_to(m)
-m.save('california_map.html')
+m.save("california_map.html")
 ```
 
 ![UFO Sightings - California Marker](../images/folium-california-marker.png)
@@ -239,8 +231,8 @@ For maps with many popups, consider these optimizations:
 ```python
 popup = create_calendar_popup(
     data,
-    width=350,   # Smaller than default 500
-    height=250   # Smaller than default 350
+    width=350,  # Smaller than default 500
+    height=250,  # Smaller than default 350
 )
 ```
 
@@ -248,7 +240,7 @@ popup = create_calendar_popup(
 ```python
 popup = create_calendar_popup(
     data,
-    show_values=False  # Removes text labels from cells
+    show_values=False,  # Removes text labels from cells
 )
 ```
 
@@ -256,7 +248,7 @@ popup = create_calendar_popup(
 ```python
 popup = create_calendar_popup(
     data,
-    interactive=False  # Removes zoom/pan controls
+    interactive=False,  # Removes zoom/pan controls
 )
 ```
 
@@ -286,20 +278,20 @@ Present research findings with interactive geographic context (e.g., social medi
 Use any Altair/Vega color scheme:
 ```python
 # Sequential schemes
-color_scheme='blues', 'greens', 'reds', 'purples', 'greys', 'oranges'
+color_scheme = "blues", "greens", "reds", "purples", "greys", "oranges"
 
 # Perceptual schemes
-color_scheme='viridis', 'plasma', 'inferno', 'magma', 'cividis'
+color_scheme = "viridis", "plasma", "inferno", "magma", "cividis"
 
 # Diverging schemes
-color_scheme='redblue', 'redgrey', 'blueorange'
+color_scheme = "redblue", "redgrey", "blueorange"
 ```
 
 ### Sunday Week Start
 ```python
 popup = create_calendar_popup(
     data,
-    monday_start=False  # Week starts on Sunday
+    monday_start=False,  # Week starts on Sunday
 )
 ```
 
@@ -332,7 +324,7 @@ User Data → .cal.aggregate_events() → 168 columns
 The implementation uses `folium.IFrame` to properly embed full HTML documents:
 
 ```python
-iframe = folium.IFrame(html, width=max_width, height=height+80)
+iframe = folium.IFrame(html, width=max_width, height=height + 80)
 popup = folium.Popup(iframe, max_width=max_width)
 ```
 

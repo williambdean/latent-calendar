@@ -47,12 +47,7 @@ The slight shift in hours for the UK might be the difference in time zones betwe
 ```python
 countries = ["United Kingdom", "Germany", "France"]
 
-(
-    df_wide
-    .loc[countries]
-    .cal.divide_by_max()
-    .cal.plot_by_row()
-)
+(df_wide.loc[countries].cal.divide_by_max().cal.plot_by_row())
 fig = plt.gcf()
 fig.suptitle("Store Transactions by Country")
 plt.show()

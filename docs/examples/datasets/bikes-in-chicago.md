@@ -33,6 +33,7 @@ This dataset is two weeks of data starting at the end of June 2023. We can easil
 # Map the week number to a human readable label
 df["week_number"] = df["started_at"].dt.isocalendar().week
 
+
 # Bit scary but just trying to make a nice label
 def create_label(df: pd.DataFrame) -> pd.Series:
     first_date = df["first_date"]
@@ -40,6 +41,7 @@ def create_label(df: pd.DataFrame) -> pd.Series:
     return first_date.dt.date.astype(str).str.cat(
         last_date.dt.date.astype(str), sep=" until "
     )
+
 
 label = (
     df.groupby("week_number")
@@ -50,11 +52,7 @@ df["week_of_year"] = df["week_number"].map(label.to_dict())
 
 df_wide = df.cal.aggregate_events("week_of_year", "started_at")
 
-(
-    df_wide
-    .cal.divide_by_max()
-    .cal.plot_by_row()
-)
+(df_wide.cal.divide_by_max().cal.plot_by_row())
 fig = plt.gcf()
 fig.suptitle("Two week of bike rides in Chicago")
 plt.show()
@@ -70,22 +68,23 @@ Though the holiday effect around the 4th, there seems to be a lower volume the S
 def create_plot_storms_func(first_storm: CalendarEvent, second_storm: CalendarEvent):
     def plot_storms(first_week_ax: plt.Axes, second_week_ax: plt.Axes):
         alpha = 0.15
-        first_storm.plot(ax=first_week_ax, facecolor="blue", alpha=alpha, label="rain storm")
-        second_storm.plot(ax=second_week_ax, facecolor="blue", alpha=alpha, label="rain storm")
+        first_storm.plot(
+            ax=first_week_ax, facecolor="blue", alpha=alpha, label="rain storm"
+        )
+        second_storm.plot(
+            ax=second_week_ax, facecolor="blue", alpha=alpha, label="rain storm"
+        )
         first_week_ax.legend()
         second_week_ax.legend()
 
     return plot_storms
 
+
 first_storm = CalendarEvent(day=6, start=7, end=18)
 second_storm = CalendarEvent(day=2, start=17, end=22)
 plot_storms = create_plot_storms_func(first_storm, second_storm)
 
-(
-    df_wide
-    .cal.divide_by_max()
-    .cal.plot_by_row()
-)
+(df_wide.cal.divide_by_max().cal.plot_by_row())
 fig = plt.gcf()
 fig.suptitle("Two week of bike rides in Chicago")
 
@@ -109,11 +108,7 @@ def title_func(idx, row) -> str:
     return f"{group} - {week}"
 
 
-(
-    df_wide
-    .cal.divide_by_max()
-    .cal.plot_by_row(max_cols=2, title_func=title_func)
-)
+(df_wide.cal.divide_by_max().cal.plot_by_row(max_cols=2, title_func=title_func))
 fig = plt.gcf()
 fig.suptitle("Two week of bike rides in Chicago")
 
@@ -136,12 +131,14 @@ The effect of rain can be investigated by sum the trips that happen during the d
 from latent_calendar.vocab import DOWHour
 from latent_calendar.segments.hand_picked import create_series_for_range, stack_segments
 
-all_daytime_rain = stack_segments([
-    create_series_for_range(
-        start=DOWHour(dow=dow, hour=7), end=DOWHour(dow=dow, hour=18)
-    ).rename(f"all_daytime_{dow}")
-    for dow in range(7)
-])
+all_daytime_rain = stack_segments(
+    [
+        create_series_for_range(
+            start=DOWHour(dow=dow, hour=7), end=DOWHour(dow=dow, hour=18)
+        ).rename(f"all_daytime_{dow}")
+        for dow in range(7)
+    ]
+)
 
 df_volume = df_wide.cal.sum_over_segments(all_daytime_rain)
 ```
@@ -166,17 +163,12 @@ def replace_index(ser: pd.Series, index: pd.Index) -> pd.Series:
     ser.index = index
     return ser
 
+
 start_date = df["started_at"].min().date()
 end_date = df["started_at"].max().date()
 dates = pd.date_range(start_date, end_date, freq="D")
 
-ax = (
-    df_volume
-    .stack()
-    .unstack(0)
-    .pipe(replace_index, index=dates)
-    .plot()
-)
+ax = df_volume.stack().unstack(0).pipe(replace_index, index=dates).plot()
 ax.set(
     ylabel="# trips",
     title="Trips between 7am and 6pm",

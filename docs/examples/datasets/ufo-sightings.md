@@ -51,7 +51,6 @@ Bermuda      0  0  0  0  0  0  0  0   0   0   0   0    0   0   0    0   0  0  0 
 We can make use the [`cal` attribute](./../../modules/extensions.md) further to plot an aggregate of the data and plots of the data by day of week and hour of day.
 
 ```python
-
 fig, axes = plt.subplots(ncols=3)
 
 df_5_year.sum().cal.plot_row(ax=axes[0])
@@ -62,8 +61,7 @@ axes[0].set(
 
 for aggregation, ax in zip(["dow", "hour"], axes.ravel()[1:]):
     (
-        df_5_year
-        .cal.sum_over_vocab(aggregation=aggregation)
+        df_5_year.cal.sum_over_vocab(aggregation=aggregation)
         .cal.divide_by_sum()
         .mul(100)
         .T.plot(ax=ax)

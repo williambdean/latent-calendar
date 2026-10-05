@@ -19,11 +19,13 @@ evenings = create_box_segment(
     day_start=0, day_end=7, hour_start=16, hour_end=21, name="Evenings"
 )
 
-df_segments = stack_segments([
-    mornings,
-    afternoons,
-    evenings,
-])
+df_segments = stack_segments(
+    [
+        mornings,
+        afternoons,
+        evenings,
+    ]
+)
 
 df_segments.cal.plot_by_row()
 ```

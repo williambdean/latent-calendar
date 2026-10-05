@@ -70,13 +70,12 @@ from latent_calendar.integrations.folium import create_calendar_popup
 
 # 1. Load and aggregate data by state
 df = load_ufo_sightings()
-df_states = df[df['country'] == 'us'].cal.aggregate_events(
-    by='state/province',
-    timestamp_col='Date_time'
+df_states = df[df["country"] == "us"].cal.aggregate_events(
+    by="state/province", timestamp_col="Date_time"
 )
 
 # 2. Get California's weekly pattern
-california_data = df_states.loc['ca']
+california_data = df_states.loc["ca"]
 
 # 3. Create an interactive popup
 popup = create_calendar_popup(
@@ -84,18 +83,16 @@ popup = create_calendar_popup(
     title="California UFO Sightings",
     width=400,
     height=280,
-    color_scheme='blues'
+    color_scheme="blues",
 )
 
 # 4. Add to map
 m = folium.Map(location=[36.7, -119.7], zoom_start=6)
 folium.Marker(
-    location=[36.7, -119.7],
-    popup=popup,
-    tooltip="Click to see calendar"
+    location=[36.7, -119.7], popup=popup, tooltip="Click to see calendar"
 ).add_to(m)
 
-m.save('california_ufos.html')
+m.save("california_ufos.html")
 ```
 
 For complete examples with GeoJSON, multiple popups, and visual demonstrations, see the [Folium Integration Guide](../../examples/folium-integration.md).
@@ -107,10 +104,10 @@ For complete examples with GeoJSON, multiple popups, and visual demonstrations, 
 All [Altair/Vega color schemes](https://vega.github.io/vega/docs/schemes/) are supported. Common choices:
 
 ```python
-color_scheme='blues'    # Blue gradient (default for popups)
-color_scheme='greens'   # Green gradient
-color_scheme='viridis'  # Perceptually uniform
-color_scheme='reds'     # Red gradient
+color_scheme = "blues"  # Blue gradient (default for popups)
+color_scheme = "greens"  # Green gradient
+color_scheme = "viridis"  # Perceptually uniform
+color_scheme = "reds"  # Red gradient
 ```
 
 ### Week Start Day
