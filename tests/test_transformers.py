@@ -1,4 +1,5 @@
 import narwhals as nw
+import numpy as np
 import pandas as pd
 import polars as pl
 import polars.testing
@@ -220,3 +221,53 @@ def test_support_for_lazyframe(polars_sample_timestamp_df) -> None:
 
     assert isinstance(result, pl.LazyFrame)
     assert result.collect().shape == (3, 4)
+
+
+def test_raw_to_vocab_subhourly_as_string_preserves_morning_events() -> None:
+    df = pd.DataFrame(
+        {
+            "id": [1, 1, 1, 1],
+            "datetime": pd.to_datetime(
+                [
+                    "2023-01-02 01:15",
+                    "2023-01-02 09:45",
+                    "2023-01-02 10:15",
+                    "2023-01-02 14:45",
+                ]
+            ),
+        }
+    )
+
+    wide_multiindex = create_raw_to_vocab_transformer(
+        id_col="id", timestamp_col="datetime", minutes=30, as_multiindex=True
+    ).fit_transform(df)
+    wide_string = create_raw_to_vocab_transformer(
+        id_col="id", timestamp_col="datetime", minutes=30, as_multiindex=False
+    ).fit_transform(df)
+
+    assert wide_string.to_numpy().sum() == 4
+    assert wide_string.loc[1, "00 1.0"] == 1
+    assert wide_string.loc[1, "00 9.5"] == 1
+    assert wide_string.loc[1, "00 10.0"] == 1
+    assert wide_string.loc[1, "00 14.5"] == 1
+    np.testing.assert_array_equal(wide_string.to_numpy(), wide_multiindex.to_numpy())
+
+
+def test_vocab_transformer_fractional_hours_polars() -> None:
+    df = pl.DataFrame(
+        {
+            "day_of_week": [0, 0, 6],
+            "hour": [0.5, 9.5, 14.5],
+        }
+    )
+    result = VocabTransformer().fit_transform(df)
+    polars.testing.assert_frame_equal(
+        result,
+        pl.DataFrame(
+            {
+                "day_of_week": [0, 0, 6],
+                "hour": [0.5, 9.5, 14.5],
+                "vocab": ["00 0.5", "00 9.5", "06 14.5"],
+            }
+        ),
+    )

@@ -186,17 +186,20 @@ def create_vocab(X: FrameT, hour_col: str, day_of_week_col) -> FrameT:
         hour_str = nw.col(hour_col).cast(nw.String).str.zfill(2)
     """
     # Pad day_of_week to width 2: 0 -> "00", 1 -> "01", ..., 6 -> "06"
+    day_of_week_str = nw.col(day_of_week_col).cast(nw.String)
     day_of_week_part = (
-        nw.when(nw.col(day_of_week_col) < 10)
-        .then(nw.concat_str([nw.lit("0"), nw.col(day_of_week_col).cast(nw.String)]))
-        .otherwise(nw.col(day_of_week_col).cast(nw.String))
+        nw.when(day_of_week_str.str.len_chars() < 2)
+        .then(nw.concat_str([nw.lit("0"), day_of_week_str]))
+        .otherwise(day_of_week_str)
     )
 
-    # Pad hour to width 2: 0 -> "00", 1 -> "01", ..., 23 -> "23"
+    # Pad hour to width 2: "0" -> "00", ..., "9" -> "09", while leaving
+    # fractional hours like "0.5" or "9.5" (len >= 2) unpadded to match zfill(2).
+    hour_str = nw.col(hour_col).cast(nw.String)
     hour_part = (
-        nw.when(nw.col(hour_col) < 10)
-        .then(nw.concat_str([nw.lit("0"), nw.col(hour_col).cast(nw.String)]))
-        .otherwise(nw.col(hour_col).cast(nw.String))
+        nw.when(hour_str.str.len_chars() < 2)
+        .then(nw.concat_str([nw.lit("0"), hour_str]))
+        .otherwise(hour_str)
     )
 
     vocab = nw.concat_str([day_of_week_part, hour_part], separator=" ").alias("vocab")
